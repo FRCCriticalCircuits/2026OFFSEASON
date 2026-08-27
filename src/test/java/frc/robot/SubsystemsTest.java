@@ -94,7 +94,7 @@ public class SubsystemsTest {
     assertEquals(SuperstructureState.STOW, superstructure.getCurrentState());
 
     // Sequential intake command
-    assertNotNull(superstructure.intakeSequenceCommand(SuperstructureState.INTAKE_GROUND));
+    assertNotNull(superstructure.intakeSequenceCommand());
   }
 
   @Test

@@ -135,12 +135,9 @@ public class RobotContainer {
 
     // ── 3. Single Driver Action Bindings ────────────────────────────────────
 
-    // INTAKE: Sequential Intake (Arm deploys -> waits for angle -> spins roller -> stows on release)
+    // INTAKE: Sequential Ground Intake (Arm deploys -> waits for angle -> spins roller -> stows on release)
     m_driverController.leftTrigger().whileTrue(
-        m_superstructure.intakeSequenceCommand(SuperstructureState.INTAKE_GROUND));
-
-    m_driverController.rightBumper().whileTrue(
-        m_superstructure.intakeSequenceCommand(SuperstructureState.INTAKE_SOURCE));
+        m_superstructure.intakeSequenceCommand());
 
     // SHOOT: Dynamic Auto-Aim & Shoot (Heading lock + dynamic flywheel/hood -> auto-feed)
     m_driverController.rightTrigger().whileTrue(
@@ -148,25 +145,13 @@ public class RobotContainer {
             m_swerveDrive,
             () -> -m_driverController.getLeftY(),
             () -> -m_driverController.getLeftX()));
-
-    // OUTTAKE / EJECT: Left Bumper (Purge balls in reverse)
-    m_driverController.leftBumper().whileTrue(
-        m_superstructure.holdStateCommand(SuperstructureState.OUTTAKE_EJECT));
-
-    // MANUAL STOW OVERRIDE: B Button
-    m_driverController.b().whileTrue(
-        m_superstructure.holdStateCommand(SuperstructureState.STOW));
-
-    // CLIMB: D-Pad Up
-    m_driverController.povUp().whileTrue(
-        m_superstructure.holdStateCommand(SuperstructureState.CLIMB));
   }
 
   // ─── Autonomous ────────────────────────────────────────────────────────────
 
   public Command getAutonomousCommand() {
     // Example autonomous sequence — Intake -> Auto-Aim Shoot -> Stow
-    return m_superstructure.intakeSequenceCommand(SuperstructureState.INTAKE_GROUND).withTimeout(2.0)
+    return m_superstructure.intakeSequenceCommand().withTimeout(2.0)
         .andThen(
             m_superstructure.autoAimAndShootCommand(m_swerveDrive, () -> 0.0, () -> 0.0)
                 .withTimeout(2.5))

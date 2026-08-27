@@ -81,20 +81,18 @@ public class Superstructure extends SubsystemBase {
 
   /**
    * Sequential intake command:
-   * 1. Deploys arm and sequencer to intake position with roller stopped.
+   * 1. Deploys arm and sequencer to ground intake position with roller stopped.
    * 2. Waits until arm reaches the target angle.
    * 3. Runs the roller to intake balls while held.
    * 4. Automatically returns arm to STOW and stops the roller on release.
-   *
-   * @param intakeState the intake state (INTAKE_GROUND or INTAKE_SOURCE)
    */
-  public Command intakeSequenceCommand(SuperstructureState intakeState) {
+  public Command intakeSequenceCommand() {
     return Commands.sequence(
-        // Step 1: Move arm to target angle while roller is stopped
+        // Step 1: Move arm to ground target angle while roller is stopped
         Commands.runOnce(() -> {
-          m_desiredState = intakeState;
-          m_sequencer.setGoal(intakeState.sequencerHeightMeters);
-          m_arm.setGoal(intakeState.armAngleRadians);
+          m_desiredState = SuperstructureState.INTAKE_GROUND;
+          m_sequencer.setGoal(SuperstructureState.INTAKE_GROUND.sequencerHeightMeters);
+          m_arm.setGoal(SuperstructureState.INTAKE_GROUND.armAngleRadians);
           m_roller.stop();
         }, this),
 
@@ -107,7 +105,7 @@ public class Superstructure extends SubsystemBase {
         // Step 4: Retract arm to STOW and stop roller
         applyState(SuperstructureState.STOW);
         m_desiredState = SuperstructureState.STOW;
-    }).withName("Superstructure.intakeSequence(" + intakeState.name() + ")");
+    }).withName("Superstructure.intakeSequence");
   }
 
   /**
@@ -211,24 +209,20 @@ public class Superstructure extends SubsystemBase {
 
   private void applyRollerAction(RollerAction action) {
     switch (action) {
-      case INTAKE  -> m_roller.runIntake();
-      case OUTTAKE -> m_roller.runOuttake();
-      case HOLD    -> m_roller.runHold();
-      case STOP    -> m_roller.stop();
+      case INTAKE -> m_roller.runIntake();
+      case HOLD   -> m_roller.runHold();
+      case STOP   -> m_roller.stop();
     }
   }
 
   private void applyShooterAction(ShooterAction action) {
     switch (action) {
-      case SHOOT, SPIN_UP -> {
-        m_shooter.runFlywheel();
-        m_shooter.setHoodHighGoal();
-      }
-      case IDLE -> {
+      case SHOOT, SPIN_UP -> m_shooter.runFlywheel();
+      case IDLE           -> {
         m_shooter.runIdleFlywheel();
         m_shooter.stowHood();
       }
-      case STOP -> m_shooter.stop();
+      case STOP           -> m_shooter.stop();
     }
   }
 

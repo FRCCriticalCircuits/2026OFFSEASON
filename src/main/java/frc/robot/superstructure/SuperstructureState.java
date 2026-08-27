@@ -17,11 +17,8 @@ public enum SuperstructureState {
   // ─── State             Sequencer (m)                                 Arm (rad)                                    RollerAction          ShooterAction ─────
   STOW               (SuperstructureConstants.kStowHeightMeters,          SuperstructureConstants.kStowAngleRadians,          RollerAction.STOP,    ShooterAction.STOP),
   INTAKE_GROUND      (SuperstructureConstants.kIntakeGroundHeightMeters,  SuperstructureConstants.kIntakeGroundAngleRadians,  RollerAction.INTAKE,  ShooterAction.IDLE),
-  INTAKE_SOURCE      (SuperstructureConstants.kIntakeSourceHeightMeters,  SuperstructureConstants.kIntakeSourceAngleRadians,  RollerAction.INTAKE,  ShooterAction.IDLE),
   SPIN_UP_SHOOT      (SuperstructureConstants.kShootHeightMeters,         SuperstructureConstants.kShootAngleRadians,         RollerAction.HOLD,    ShooterAction.SPIN_UP),
-  SHOOT              (SuperstructureConstants.kShootHeightMeters,         SuperstructureConstants.kShootAngleRadians,         RollerAction.INTAKE,  ShooterAction.SHOOT),
-  OUTTAKE_EJECT      (SuperstructureConstants.kIntakeGroundHeightMeters,  SuperstructureConstants.kIntakeGroundAngleRadians,  RollerAction.OUTTAKE, ShooterAction.STOP),
-  CLIMB              (SuperstructureConstants.kClimbHeightMeters,         SuperstructureConstants.kClimbAngleRadians,         RollerAction.STOP,    ShooterAction.STOP);
+  SHOOT              (SuperstructureConstants.kShootHeightMeters,         SuperstructureConstants.kShootAngleRadians,         RollerAction.INTAKE,  ShooterAction.SHOOT);
 
   // ─── Fields ────────────────────────────────────────────────────────────────
 
@@ -49,7 +46,6 @@ public enum SuperstructureState {
   public enum RollerAction {
     STOP,
     INTAKE,
-    OUTTAKE,
     HOLD
   }
 

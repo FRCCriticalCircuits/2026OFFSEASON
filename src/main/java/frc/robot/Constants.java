@@ -243,19 +243,11 @@ public final class Constants {
     // Arm Positions for Superstructure States
     public static final double kStowAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
     public static final double kIntakeGroundAngleRadians = Math.toRadians(-45.0); // TODO: Tune this value
-    public static final double kIntakeSourceAngleRadians = Math.toRadians(30.0); // TODO: Tune this value
     public static final double kShootAngleRadians = Math.toRadians(60.0); // TODO: Tune this value
-    public static final double kScoreLowAngleRadians = Math.toRadians(45.0); // TODO: Tune this value
-    public static final double kScoreHighAngleRadians = Math.toRadians(75.0); // TODO: Tune this value
-    public static final double kClimbAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
 
     // Sequencer Positions for Superstructure States
     public static final double kStowHeightMeters = 0.00; // TODO: Tune this value
     public static final double kIntakeGroundHeightMeters = 0.10; // TODO: Tune this value
-    public static final double kIntakeSourceHeightMeters = 0.60; // TODO: Tune this value
     public static final double kShootHeightMeters = 0.80; // TODO: Tune this value
-    public static final double kScoreLowHeightMeters = 0.30; // TODO: Tune this value
-    public static final double kScoreHighHeightMeters = 1.10; // TODO: Tune this value
-    public static final double kClimbHeightMeters = 1.20; // TODO: Tune this value
   }
 }

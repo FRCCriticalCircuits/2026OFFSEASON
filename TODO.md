@@ -240,9 +240,7 @@ Point all module bevel gears in the same direction (e.g. facing left or right), 
 |---|---|---|---|
 | **`STOW`** | $0^\circ$ ($0.00\text{ rad}$) | $0.00\text{ m}$ | Fully retracted starting/travel pose. |
 | **`INTAKE_GROUND`** | $-45^\circ$ ($-0.785\text{ rad}$) | $0.10\text{ m}$ | Floor intake position. |
-| **`INTAKE_SOURCE`** | $+30^\circ$ ($+0.524\text{ rad}$) | $0.60\text{ m}$ | Feeder station intake position. |
 | **`SPIN_UP_SHOOT`** | $+60^\circ$ ($+1.047\text{ rad}$) | $0.80\text{ m}$ | Staging pose while auto-aiming. |
-| **`CLIMB`** | $0^\circ$ ($0.00\text{ rad}$) | $1.20\text{ m}$ | Endgame climb alignment pose. |
 
-- [ ] Measure physical arm angles for floor and source collection.
+- [ ] Measure physical arm angle for floor collection.
 - [ ] Verify transitions between states avoid internal mechanism collisions.

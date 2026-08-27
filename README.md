@@ -178,17 +178,14 @@ When holding the **Right Trigger**:
 - **Role**: Accelerates balls to precise exit velocity while angling the hood for accurate target trajectory.
 
 ### 6. Superstructure State Machine
-Coordinates all 4 mechanisms into synchronized presets:
+Coordinates all mechanisms into synchronized presets:
 
 | State | Sequencer Height | Arm Angle | Roller Action | Shooter Action (Flywheel + Hood) |
 |---|---|---|---|---|
 | **`STOW`** | $0.00\text{ m}$ | $0^\circ$ | `STOP` | Flywheel `STOP`, Hood $0^\circ$ |
 | **`INTAKE_GROUND`** | $0.10\text{ m}$ | $-45^\circ$ | `INTAKE` | Flywheel `IDLE`, Hood $0^\circ$ |
-| **`INTAKE_SOURCE`** | $0.60\text{ m}$ | $+30^\circ$ | `INTAKE` | Flywheel `IDLE`, Hood $0^\circ$ |
-| **`SPIN_UP_SHOOT`** | $0.80\text{ m}$ | $+60^\circ$ | `HOLD` | Flywheel $70\text{ RPS}$, Hood $+35^\circ$ |
-| **`SHOOT`** | $0.80\text{ m}$ | $+60^\circ$ | `INTAKE` (feed) | Flywheel $70\text{ RPS}$, Hood $+35^\circ$ |
-| **`OUTTAKE_EJECT`** | $0.10\text{ m}$ | $-45^\circ$ | `OUTTAKE` | Flywheel `STOP`, Hood $0^\circ$ |
-| **`CLIMB`** | $1.20\text{ m}$ | $0^\circ$ | `STOP` | Flywheel `STOP`, Hood $0^\circ$ |
+| **`SPIN_UP_SHOOT`** | $0.80\text{ m}$ | $+60^\circ$ | `HOLD` | Flywheel Spooling, Hood Positioning |
+| **`SHOOT`** | $0.80\text{ m}$ | $+60^\circ$ | `INTAKE` (feed) | Flywheel At Speed, Hood At Angle |
 
 ---
 
@@ -257,12 +254,8 @@ All constants are centralized in [`Constants.java`](src/main/java/frc/robot/Cons
 | **Left Stick X (Inverted)** | Translate Left / Right (Field-Relative) |
 | **Right Stick X** | Rotate Left / Right |
 | **Start Button** | Reset Gyro Heading to 0° |
-| **Left Trigger (Hold)** | **SEQUENTIAL INTAKE (Ground)**: Arm deploys $\rightarrow$ waits for angle $\rightarrow$ spins roller $\rightarrow$ stows on release |
-| **Right Bumper (Hold)** | **SEQUENTIAL INTAKE (Source)**: Arm to feeder station $\rightarrow$ spins roller $\rightarrow$ stows on release |
+| **Left Trigger (Hold)** | **SEQUENTIAL GROUND INTAKE**: Arm deploys $\rightarrow$ waits for angle $\rightarrow$ spins roller $\rightarrow$ stows on release |
 | **Right Trigger (Hold)** | **DYNAMIC AUTO-AIM & SHOOT**: Rotates chassis to goal + sets flywheel speed & hood angle from distance $\rightarrow$ auto-feeds |
-| **Left Bumper (Hold)** | **OUTTAKE / EJECT**: Purge balls out in reverse |
-| **B Button (Hold)** | Superstructure → `STOW` (Manual stow override) |
-| **D-Pad Up (Hold)** | Superstructure → `CLIMB` (Endgame climb preset) |
 | *(Released / Default)* | Superstructure → `STOW` (Automatic home position) |
 
 ---
