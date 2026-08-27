@@ -8,13 +8,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.Arm;
-import frc.robot.subsystems.Elevator;
-import frc.robot.subsystems.EndEffector;
-import frc.robot.superstructure.SuperstructureState.EndEffectorAction;
+import frc.robot.subsystems.arm.Arm;
+import frc.robot.subsystems.sequencer.Sequencer;
 
 /**
- * The Superstructure coordinates the Elevator, Arm, and EndEffector subsystems
+ * The Superstructure coordinates the Sequencer and Arm subsystems
  * using an enum-based state machine.
  *
  * <p>Typical usage in {@link frc.robot.RobotContainer}:
@@ -24,9 +22,9 @@ import frc.robot.superstructure.SuperstructureState.EndEffectorAction;
  *
  * <p>Transition safety notes:
  * <ul>
- *   <li>The elevator moves first when going UP (arm could collide with structure if it
+ *   <li>The sequencer moves first when going UP (arm could collide with structure if it
  *       extends at a low height — adjust sequencing for your robot geometry).</li>
- *   <li>The arm moves first when going DOWN (retract arm before lowering elevator).</li>
+ *   <li>The arm moves first when going DOWN (retract arm before lowering sequencer).</li>
  * </ul>
  * Customize {@link #applyState(SuperstructureState)} to match your robot's collision zones.
  */
@@ -34,52 +32,50 @@ public class Superstructure extends SubsystemBase {
 
   // ─── Subsystems ────────────────────────────────────────────────────────────
 
-  private final Elevator    m_elevator;
-  private final Arm         m_arm;
-  private final EndEffector m_endEffector;
+  private final Sequencer m_sequencer;
+  private final Arm       m_arm;
 
   // ─── State machine ─────────────────────────────────────────────────────────
 
-  private SuperstructureState m_currentState  = SuperstructureState.STOW;
+  private SuperstructureState m_currentState = SuperstructureState.STOW;
   private SuperstructureState m_desiredState  = SuperstructureState.STOW;
 
   // ─── Constructor ───────────────────────────────────────────────────────────
 
-  public Superstructure(Elevator elevator, Arm arm, EndEffector endEffector) {
-    m_elevator    = elevator;
-    m_arm         = arm;
-    m_endEffector = endEffector;
+  public Superstructure(Sequencer sequencer, Arm arm) {
+    m_sequencer = sequencer;
+    m_arm       = arm;
   }
 
-  // ─── Public API ────────────────────────────────────────────────────────────
+  // ─── Public API ────────────────────────────────────────────────────
 
   /**
-   * Returns a {@link Command} that transitions the superstructure to {@code state}
-   * and finishes once both elevator and arm are at their goals.
+   * Returns a {@link Command} that transitions the superstructure to {@code targetState}
+   * and finishes once both sequencer and arm are at their goals.
    *
-   * @param state the desired {@link SuperstructureState}
+   * @param targetState the desired {@link SuperstructureState}
    */
-  public Command setStateCommand(SuperstructureState state) {
+  public Command setStateCommand(SuperstructureState targetState) {
     return Commands.runOnce(() -> {
-          m_desiredState = state;
-          applyState(state);
+          m_desiredState = targetState;
+          applyState(targetState);
         }, this)
         .andThen(Commands.waitUntil(this::atDesiredState))
-        .withName("Superstructure → " + state.name());
+        .withName("Superstructure → " + targetState.name());
   }
 
   /**
-   * Returns a {@link Command} that holds the superstructure at {@code state}
+   * Returns a {@link Command} that holds the superstructure at {@code targetState}
    * indefinitely (until cancelled). Useful for teleop triggers.
    *
-   * @param state the desired {@link SuperstructureState}
+   * @param targetState the desired {@link SuperstructureState}
    */
-  public Command holdStateCommand(SuperstructureState state) {
+  public Command holdStateCommand(SuperstructureState targetState) {
     return Commands.run(() -> {
-          m_desiredState = state;
-          applyState(state);
+          m_desiredState = targetState;
+          applyState(targetState);
         }, this)
-        .withName("Hold → " + state.name());
+        .withName("Hold → " + targetState.name());
   }
 
   /** @return the state the superstructure is currently transitioning toward */
@@ -92,9 +88,9 @@ public class Superstructure extends SubsystemBase {
     return m_currentState;
   }
 
-  /** @return true when elevator and arm have both reached the desired state goals */
+  /** @return true when sequencer and arm have both reached the desired state goals */
   public boolean atDesiredState() {
-    return m_elevator.atGoal() && m_arm.atGoal();
+    return m_sequencer.atGoal() && m_arm.atGoal();
   }
 
   // ─── State application ─────────────────────────────────────────────────────
@@ -103,21 +99,12 @@ public class Superstructure extends SubsystemBase {
    * Applies the setpoints for a given state to the subsystems.
    *
    * <p>Override this method to add collision-avoidance sequencing specific to
-   * your robot's geometry (e.g. delay arm movement until elevator is above a
+   * your robot's geometry (e.g. delay arm movement until sequencer is above a
    * certain height).
    */
-  private void applyState(SuperstructureState state) {
-    m_elevator.setGoal(state.elevatorHeightMeters);
-    m_arm.setGoal(state.armAngleRadians);
-    applyEndEffectorAction(state.endEffectorAction);
-  }
-
-  private void applyEndEffectorAction(EndEffectorAction action) {
-    switch (action) {
-      case INTAKE  -> m_endEffector.intake();
-      case OUTTAKE -> m_endEffector.outtake();
-      default      -> m_endEffector.stop();
-    }
+  private void applyState(SuperstructureState targetState) {
+    m_sequencer.setGoal(targetState.sequencerHeightMeters);
+    m_arm.setGoal(targetState.armAngleRadians);
   }
 
   // ─── Periodic ──────────────────────────────────────────────────────────────

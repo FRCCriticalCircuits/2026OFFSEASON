@@ -4,48 +4,36 @@
 
 package frc.robot.superstructure;
 
+import frc.robot.Constants.SuperstructureConstants;
+
 /**
  * Defines every named state the superstructure can be in.
  *
- * <p>Each state carries the target positions for the elevator (meters) and
- * arm (radians), plus the desired end-effector action.
+ * <p>Each state carries the target positions for the sequencer (meters) and
+ * arm (radians).
  *
  * <p>Add more states here as your robot's game requirements grow.
  */
 public enum SuperstructureState {
 
-  // ─── State             Elevator (m)   Arm (rad)                Intake action ───────
-  STOW               (0.00,           Math.toRadians(  0.0),  EndEffectorAction.STOP),
-  INTAKE_GROUND      (0.10,           Math.toRadians(-45.0),  EndEffectorAction.INTAKE),
-  INTAKE_SOURCE      (0.60,           Math.toRadians( 30.0),  EndEffectorAction.INTAKE),
-  SCORE_LOW          (0.30,           Math.toRadians( 45.0),  EndEffectorAction.OUTTAKE),
-  SCORE_MID          (0.65,           Math.toRadians( 60.0),  EndEffectorAction.OUTTAKE),
-  SCORE_HIGH         (1.10,           Math.toRadians( 75.0),  EndEffectorAction.OUTTAKE),
-  CLIMB              (1.20,           Math.toRadians(  0.0),  EndEffectorAction.STOP);
+  // ─── State             Sequencer (meters)                                 Arm (radians) ───────
+  STOW               (SuperstructureConstants.kStowHeightMeters,          SuperstructureConstants.kStowAngleRadians),
+  INTAKE_GROUND      (SuperstructureConstants.kIntakeGroundHeightMeters,  SuperstructureConstants.kIntakeGroundAngleRadians),
+  INTAKE_SOURCE      (SuperstructureConstants.kIntakeSourceHeightMeters,  SuperstructureConstants.kIntakeSourceAngleRadians),
+  SCORE_LOW          (SuperstructureConstants.kScoreLowHeightMeters,      SuperstructureConstants.kScoreLowAngleRadians),
+  SCORE_MID          (SuperstructureConstants.kScoreMidHeightMeters,      SuperstructureConstants.kScoreMidAngleRadians),
+  SCORE_HIGH         (SuperstructureConstants.kScoreHighHeightMeters,     SuperstructureConstants.kScoreHighAngleRadians),
+  CLIMB              (SuperstructureConstants.kClimbHeightMeters,         SuperstructureConstants.kClimbAngleRadians);
 
   // ─── Fields ────────────────────────────────────────────────────────────────
 
-  public final double elevatorHeightMeters;
+  public final double sequencerHeightMeters;
   public final double armAngleRadians;
-  public final EndEffectorAction endEffectorAction;
 
   // ─── Constructor ───────────────────────────────────────────────────────────
 
-  SuperstructureState(
-      double elevatorHeightMeters,
-      double armAngleRadians,
-      EndEffectorAction endEffectorAction) {
-    this.elevatorHeightMeters = elevatorHeightMeters;
+  SuperstructureState(double sequencerHeightMeters, double armAngleRadians) {
+    this.sequencerHeightMeters = sequencerHeightMeters;
     this.armAngleRadians      = armAngleRadians;
-    this.endEffectorAction    = endEffectorAction;
-  }
-
-  // ─── Inner enum ────────────────────────────────────────────────────────────
-
-  /** What the end effector should be doing in a given state. */
-  public enum EndEffectorAction {
-    STOP,
-    INTAKE,
-    OUTTAKE
   }
 }
