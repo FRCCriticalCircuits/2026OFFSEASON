@@ -10,7 +10,7 @@ import frc.robot.Constants.SuperstructureConstants;
  * Defines every named state the superstructure can be in.
  *
  * <p>Each state carries the target positions for the sequencer (meters) and
- * arm (radians), along with the desired actions for the roller and shooter (flywheel + hood).
+ * arm (radians), along with the desired actions for the roller and shooter.
  */
 public enum SuperstructureState {
 
@@ -18,10 +18,8 @@ public enum SuperstructureState {
   STOW               (SuperstructureConstants.kStowHeightMeters,          SuperstructureConstants.kStowAngleRadians,          RollerAction.STOP,    ShooterAction.STOP),
   INTAKE_GROUND      (SuperstructureConstants.kIntakeGroundHeightMeters,  SuperstructureConstants.kIntakeGroundAngleRadians,  RollerAction.INTAKE,  ShooterAction.IDLE),
   INTAKE_SOURCE      (SuperstructureConstants.kIntakeSourceHeightMeters,  SuperstructureConstants.kIntakeSourceAngleRadians,  RollerAction.INTAKE,  ShooterAction.IDLE),
-  SPIN_UP_SHOOT      (SuperstructureConstants.kShootHeightMeters,         SuperstructureConstants.kShootAngleRadians,         RollerAction.HOLD,    ShooterAction.SPIN_UP_HIGH),
-  SHOOT              (SuperstructureConstants.kShootHeightMeters,         SuperstructureConstants.kShootAngleRadians,         RollerAction.INTAKE,  ShooterAction.SHOOT_HIGH),
-  SCORE_LOW          (SuperstructureConstants.kScoreLowHeightMeters,      SuperstructureConstants.kScoreLowAngleRadians,      RollerAction.OUTTAKE, ShooterAction.SPIN_UP_LOW),
-  SCORE_HIGH         (SuperstructureConstants.kScoreHighHeightMeters,     SuperstructureConstants.kScoreHighAngleRadians,     RollerAction.HOLD,    ShooterAction.SPIN_UP_HIGH),
+  SPIN_UP_SHOOT      (SuperstructureConstants.kShootHeightMeters,         SuperstructureConstants.kShootAngleRadians,         RollerAction.HOLD,    ShooterAction.SPIN_UP),
+  SHOOT              (SuperstructureConstants.kShootHeightMeters,         SuperstructureConstants.kShootAngleRadians,         RollerAction.INTAKE,  ShooterAction.SHOOT),
   OUTTAKE_EJECT      (SuperstructureConstants.kIntakeGroundHeightMeters,  SuperstructureConstants.kIntakeGroundAngleRadians,  RollerAction.OUTTAKE, ShooterAction.STOP),
   CLIMB              (SuperstructureConstants.kClimbHeightMeters,         SuperstructureConstants.kClimbAngleRadians,         RollerAction.STOP,    ShooterAction.STOP);
 
@@ -55,13 +53,11 @@ public enum SuperstructureState {
     HOLD
   }
 
-  /** Desired action for the shooter mechanism (Flywheel + Hood). */
+  /** Desired action for the shooter mechanism. */
   public enum ShooterAction {
     STOP,
     IDLE,
-    SPIN_UP_LOW,
-    SPIN_UP_HIGH,
-    SHOOT_LOW,
-    SHOOT_HIGH
+    SPIN_UP,
+    SHOOT
   }
 }

@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Translation2d;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
  * constants. This class should not be used for any other purpose. All constants should be declared
@@ -144,6 +146,25 @@ public final class Constants {
     public static final double kHoodStowAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
     public static final double kHoodLowGoalAngleRadians = Math.toRadians(15.0); // TODO: Tune this value
     public static final double kHoodHighGoalAngleRadians = Math.toRadians(35.0); // TODO: Tune this value
+  }
+
+  public static final class AutoAimConstants {
+    // ─── Field Goal Locations (meters in WPILib field coordinates) ───────────
+    public static final Translation2d kBlueGoalLocation = new Translation2d(0.0, 5.55); // TODO: Set to exact Blue goal (m)
+    public static final Translation2d kRedGoalLocation = new Translation2d(16.54, 5.55); // TODO: Set to exact Red goal (m)
+
+    // ─── Drivetrain Heading Alignment PID ────────────────────────────────────
+    public static final double kHeadingProportionalGain = 5.0; // TODO: Tune this value
+    public static final double kHeadingIntegralGain = 0.0; // TODO: Tune this value
+    public static final double kHeadingDerivativeGain = 0.2; // TODO: Tune this value
+    public static final double kHeadingToleranceRadians = Math.toRadians(1.5); // TODO: Tune this value
+
+    // ─── Distance Boundaries ─────────────────────────────────────────────────
+    public static final double kMinDistanceMeters = 1.0; // Minimum valid shooting range (m)
+    public static final double kMaxDistanceMeters = 7.0; // Maximum valid shooting range (m)
+
+    // ─── Safety Speed Reduction ──────────────────────────────────────────────
+    public static final double kAutoAimMaxSpeedMultiplier = 0.70; // 30% speed reduction during auto-aim
   }
 
   public static final class SwerveConstants {

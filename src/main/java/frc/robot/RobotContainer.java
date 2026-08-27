@@ -119,8 +119,8 @@ public class RobotContainer {
     // ── 1. Swerve Drive Default Command ─────────────────────────────────────
     m_swerveDrive.setDefaultCommand(
         m_swerveDrive.driveCommand(
-            () -> -m_driverController.getLeftY(),  // Forward / backward translation (inverted for field-relative)
-            () -> -m_driverController.getLeftX(),  // Left / right translation (inverted for field-relative)
+            () -> -m_driverController.getLeftY(),  // Forward / backward translation
+            () -> -m_driverController.getLeftX(),  // Left / right translation
             () -> -m_driverController.getRightX(), // Rotation
             true                                   // Field-relative driving
         ));
@@ -129,37 +129,31 @@ public class RobotContainer {
     m_driverController.start().onTrue(
         Commands.runOnce(() -> m_swerveDrive.resetHeading(), m_swerveDrive));
 
-    // ── 2. Superstructure Default Command (Stow when no trigger/button held) ─
+    // ── 2. Superstructure Default Command (Stow when no trigger is held) ────
     m_superstructure.setDefaultCommand(
         m_superstructure.holdStateCommand(SuperstructureState.STOW));
 
     // ── 3. Single Driver Action Bindings ────────────────────────────────────
 
-    // INTAKE: Left Trigger (Ground Intake) & Right Bumper (Source Intake)
+    // INTAKE: Sequential Intake (Arm deploys -> waits for angle -> spins roller -> stows on release)
     m_driverController.leftTrigger().whileTrue(
-        m_superstructure.holdStateCommand(SuperstructureState.INTAKE_GROUND));
+        m_superstructure.intakeSequenceCommand(SuperstructureState.INTAKE_GROUND));
 
     m_driverController.rightBumper().whileTrue(
-        m_superstructure.holdStateCommand(SuperstructureState.INTAKE_SOURCE));
+        m_superstructure.intakeSequenceCommand(SuperstructureState.INTAKE_SOURCE));
 
-    // SHOOT: Right Trigger (Automated Shoot Sequence: Spool Flywheel + Set Hood -> Feed Balls)
+    // SHOOT: Dynamic Auto-Aim & Shoot (Heading lock + dynamic flywheel/hood -> auto-feed)
     m_driverController.rightTrigger().whileTrue(
-        m_superstructure.shootSequenceCommand());
+        m_superstructure.autoAimAndShootCommand(
+            m_swerveDrive,
+            () -> -m_driverController.getLeftY(),
+            () -> -m_driverController.getLeftX()));
 
     // OUTTAKE / EJECT: Left Bumper (Purge balls in reverse)
     m_driverController.leftBumper().whileTrue(
         m_superstructure.holdStateCommand(SuperstructureState.OUTTAKE_EJECT));
 
-    // SCORING PRESETS: A Button (Low Goal), Y Button (High Goal), X Button (Spin Up Pre-spool)
-    m_driverController.a().whileTrue(
-        m_superstructure.holdStateCommand(SuperstructureState.SCORE_LOW));
-
-    m_driverController.y().whileTrue(
-        m_superstructure.holdStateCommand(SuperstructureState.SCORE_HIGH));
-
-    m_driverController.x().whileTrue(
-        m_superstructure.holdStateCommand(SuperstructureState.SPIN_UP_SHOOT));
-
+    // MANUAL STOW OVERRIDE: B Button
     m_driverController.b().whileTrue(
         m_superstructure.holdStateCommand(SuperstructureState.STOW));
 
@@ -171,11 +165,12 @@ public class RobotContainer {
   // ─── Autonomous ────────────────────────────────────────────────────────────
 
   public Command getAutonomousCommand() {
-    // Example autonomous sequence — Intake -> Shoot -> Stow
-    return m_superstructure.setStateCommand(SuperstructureState.INTAKE_GROUND)
-        .andThen(Commands.waitSeconds(1.5))
-        .andThen(m_superstructure.shootSequenceCommand().withTimeout(2.5))
+    // Example autonomous sequence — Intake -> Auto-Aim Shoot -> Stow
+    return m_superstructure.intakeSequenceCommand(SuperstructureState.INTAKE_GROUND).withTimeout(2.0)
+        .andThen(
+            m_superstructure.autoAimAndShootCommand(m_swerveDrive, () -> 0.0, () -> 0.0)
+                .withTimeout(2.5))
         .andThen(m_superstructure.setStateCommand(SuperstructureState.STOW))
-        .withName("Example Autonomous Command");
+        .withName("Example Auto-Aim Autonomous Command");
   }
 }

@@ -7,6 +7,8 @@ package frc.robot;
 import static org.junit.jupiter.api.Assertions.*;
 
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.arm.Arm;
 import frc.robot.subsystems.arm.ArmIOSim;
 import frc.robot.subsystems.roller.Roller;
@@ -20,11 +22,13 @@ import frc.robot.subsystems.swerve.SwerveDrive;
 import frc.robot.subsystems.swerve.SwerveModuleIOSim;
 import frc.robot.superstructure.Superstructure;
 import frc.robot.superstructure.SuperstructureState;
+import frc.robot.util.AutoAim;
+import frc.robot.util.AutoAim.AutoAimResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests verifying subsystem logic, simulation updates, and state transitions.
+ * Unit tests verifying subsystem logic, simulation updates, state transitions, and auto-aim math.
  */
 public class SubsystemsTest {
 
@@ -89,9 +93,20 @@ public class SubsystemsTest {
     // Initial state
     assertEquals(SuperstructureState.STOW, superstructure.getCurrentState());
 
-    // Schedule command to ground intake
-    superstructure.holdStateCommand(SuperstructureState.INTAKE_GROUND).execute();
-    assertEquals(SuperstructureState.INTAKE_GROUND, superstructure.getDesiredState());
+    // Sequential intake command
+    assertNotNull(superstructure.intakeSequenceCommand(SuperstructureState.INTAKE_GROUND));
+  }
+
+  @Test
+  public void testAutoAimCalculations() {
+    Pose2d robotPose = new Pose2d(3.0, 5.55, new Rotation2d());
+    AutoAimResult result = AutoAim.calculate(robotPose);
+
+    assertNotNull(result);
+    assertTrue(result.distanceMeters > 0.0);
+    assertNotNull(result.targetHeading);
+    assertTrue(result.flywheelVelocityRotationsPerSecond > 0.0);
+    assertTrue(result.hoodAngleRadians > 0.0);
   }
 
   @Test

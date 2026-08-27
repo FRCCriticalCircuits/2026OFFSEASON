@@ -8,16 +8,22 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.AutoAimConstants;
+import frc.robot.Constants.SwerveConstants;
 import frc.robot.subsystems.arm.Arm;
 import frc.robot.subsystems.roller.Roller;
 import frc.robot.subsystems.sequencer.Sequencer;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.swerve.SwerveDrive;
 import frc.robot.superstructure.SuperstructureState.RollerAction;
 import frc.robot.superstructure.SuperstructureState.ShooterAction;
+import frc.robot.util.AutoAim;
+import frc.robot.util.AutoAim.AutoAimResult;
+import java.util.function.DoubleSupplier;
 
 /**
  * The Superstructure coordinates the Sequencer, Arm, Roller, and combined Shooter (Flywheel + Hood)
- * subsystems using an enum-based state machine.
+ * subsystems using an enum-based state machine and dynamic Auto-Aim automation.
  */
 public class Superstructure extends SubsystemBase {
 
@@ -42,7 +48,7 @@ public class Superstructure extends SubsystemBase {
     m_shooter   = shooter;
   }
 
-  // ─── Public API ────────────────────────────────────────────────────────────
+  // ─── Public Commands ───────────────────────────────────────────────────────
 
   /**
    * Returns a {@link Command} that transitions the superstructure to {@code targetState}
@@ -74,16 +80,102 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Returns an automated shoot sequence command:
-   * 1. Positions arm & sequencer, sets hood angle, and spools flywheel (SPIN_UP_SHOOT).
-   * 2. Waits until flywheel reaches speed, hood reaches angle, and arm/sequencer arrive.
-   * 3. Transitions to SHOOT to feed balls through sequencer into the shooter.
+   * Sequential intake command:
+   * 1. Deploys arm and sequencer to intake position with roller stopped.
+   * 2. Waits until arm reaches the target angle.
+   * 3. Runs the roller to intake balls while held.
+   * 4. Automatically returns arm to STOW and stops the roller on release.
+   *
+   * @param intakeState the intake state (INTAKE_GROUND or INTAKE_SOURCE)
    */
-  public Command shootSequenceCommand() {
-    return setStateCommand(SuperstructureState.SPIN_UP_SHOOT)
-        .andThen(Commands.waitUntil(() -> m_shooter.isReadyToShoot() && atDesiredState()))
-        .andThen(holdStateCommand(SuperstructureState.SHOOT))
-        .withName("Superstructure.shootSequence");
+  public Command intakeSequenceCommand(SuperstructureState intakeState) {
+    return Commands.sequence(
+        // Step 1: Move arm to target angle while roller is stopped
+        Commands.runOnce(() -> {
+          m_desiredState = intakeState;
+          m_sequencer.setGoal(intakeState.sequencerHeightMeters);
+          m_arm.setGoal(intakeState.armAngleRadians);
+          m_roller.stop();
+        }, this),
+
+        // Step 2: Wait until arm reaches target angle
+        Commands.waitUntil(m_arm::atGoal),
+
+        // Step 3: Run roller to intake balls
+        Commands.run(() -> m_roller.runIntake(), this)
+    ).finallyDo(interrupted -> {
+        // Step 4: Retract arm to STOW and stop roller
+        applyState(SuperstructureState.STOW);
+        m_desiredState = SuperstructureState.STOW;
+    }).withName("Superstructure.intakeSequence(" + intakeState.name() + ")");
+  }
+
+  /**
+   * Dynamic Auto-Aim & Shoot Command:
+   * 1. Continuously tracks distance to goal and aligns swerve heading while driver translates.
+   * 2. Dynamically calculates and applies flywheel speed and hood angle from distance.
+   * 3. Once heading, flywheel speed, hood angle, and arm/sequencer are locked, feeds balls to shoot.
+   * 4. Automatically returns to STOW and stops shooter when released.
+   *
+   * @param swerve Swerve drivetrain subsystem.
+   * @param xSpeedSupplier Driver X translation supplier.
+   * @param ySpeedSupplier Driver Y translation supplier.
+   */
+  public Command autoAimAndShootCommand(
+      SwerveDrive swerve,
+      DoubleSupplier xSpeedSupplier,
+      DoubleSupplier ySpeedSupplier) {
+    return Commands.run(
+        () -> {
+          AutoAimResult aimResult = AutoAim.calculate(swerve.getPose());
+
+          // 1. Swerve heading alignment with manual driver translation (reduced by 30% for safety)
+          double autoAimMaxSpeedMetersPerSecond =
+              SwerveConstants.kMaxSpeedMetersPerSecond * AutoAimConstants.kAutoAimMaxSpeedMultiplier;
+
+          swerve.driveWithHeadingLock(
+              xSpeedSupplier.getAsDouble() * autoAimMaxSpeedMetersPerSecond,
+              ySpeedSupplier.getAsDouble() * autoAimMaxSpeedMetersPerSecond,
+              aimResult.targetHeading,
+              true);
+
+          // 2. Set dynamic shooter parameters from distance
+          m_shooter.prepareShot(
+              aimResult.flywheelVelocityRotationsPerSecond,
+              aimResult.hoodAngleRadians);
+
+          // 3. Set arm and sequencer to shooting setpoints
+          m_arm.setGoal(SuperstructureState.SPIN_UP_SHOOT.armAngleRadians);
+          m_sequencer.setGoal(SuperstructureState.SPIN_UP_SHOOT.sequencerHeightMeters);
+
+          // 4. Feed balls when on target
+          boolean fullyReady =
+              aimResult.headingAligned
+                  && m_shooter.isReadyToShoot()
+                  && m_arm.atGoal()
+                  && m_sequencer.atGoal();
+
+          if (fullyReady) {
+            m_roller.runIntake(); // Assist ball feed
+            m_desiredState = SuperstructureState.SHOOT;
+          } else {
+            m_roller.runHold();
+            m_desiredState = SuperstructureState.SPIN_UP_SHOOT;
+          }
+
+          SmartDashboard.putNumber("AutoAim/Target Distance (m)", aimResult.distanceMeters);
+          SmartDashboard.putNumber("AutoAim/Target Heading (deg)", aimResult.targetHeading.getDegrees());
+          SmartDashboard.putBoolean("AutoAim/Heading Aligned", aimResult.headingAligned);
+          SmartDashboard.putBoolean("AutoAim/Ready To Fire", fullyReady);
+        },
+        this,
+        swerve
+    ).finallyDo(interrupted -> {
+        // Return to STOW and stop shooter upon trigger release
+        m_shooter.stop();
+        applyState(SuperstructureState.STOW);
+        m_desiredState = SuperstructureState.STOW;
+    }).withName("Superstructure.autoAimAndShoot");
   }
 
   /** @return the state the superstructure is currently transitioning toward */
@@ -128,13 +220,9 @@ public class Superstructure extends SubsystemBase {
 
   private void applyShooterAction(ShooterAction action) {
     switch (action) {
-      case SPIN_UP_HIGH, SHOOT_HIGH -> {
+      case SHOOT, SPIN_UP -> {
         m_shooter.runFlywheel();
         m_shooter.setHoodHighGoal();
-      }
-      case SPIN_UP_LOW, SHOOT_LOW -> {
-        m_shooter.runFlywheel();
-        m_shooter.setHoodLowGoal();
       }
       case IDLE -> {
         m_shooter.runIdleFlywheel();

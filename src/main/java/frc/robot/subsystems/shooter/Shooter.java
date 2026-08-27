@@ -108,6 +108,17 @@ public class Shooter extends SubsystemBase {
     setHoodAngle(hoodAngleRad);
   }
 
+  /**
+   * Automatically calculates and applies flywheel speed and hood angle from distance.
+   *
+   * @param distanceMeters distance to target in meters
+   */
+  public void setAimFromDistance(double distanceMeters) {
+    double flywheelRps = frc.robot.util.AutoAim.calculateFlywheelVelocity(distanceMeters);
+    double hoodAngleRad = frc.robot.util.AutoAim.calculateHoodAngle(distanceMeters);
+    prepareShot(flywheelRps, hoodAngleRad);
+  }
+
   /** Stops both flywheel and hood. */
   public void stop() {
     stopFlywheel();

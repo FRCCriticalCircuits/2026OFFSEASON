@@ -11,7 +11,8 @@ This document tracks all constants, physical dimensions, CAN IDs, current limits
 4. [Sequencer Mechanism Tuning](#4-sequencer-mechanism-tuning)
 5. [Roller (Intake) Tuning](#5-roller-intake-tuning)
 6. [Shooter (Flywheel + Hood) Tuning](#6-shooter-flywheel--hood-tuning)
-7. [Superstructure State Machine Setpoints](#7-superstructure-state-machine-setpoints)
+7. [Auto-Aim & Field Calibration](#7-auto-aim--field-calibration)
+8. [Superstructure State Machine Setpoints](#8-superstructure-state-machine-setpoints)
 
 ---
 
@@ -190,13 +191,12 @@ Point all module bevel gears in the same direction (e.g. facing left or right), 
 | `kFlywheelStaticGain` ($kS$) | `0.25` | volts | Voltage to overcome flywheel friction. |
 | `kFlywheelVelocityGain` ($kV$) | `0.12` | volts / RPS | Velocity feedforward gain ($12\text{ V} / \text{Max RPS}$). |
 | `kFlywheelAccelerationGain` ($kA$) | `0.01` | volts / $\text{RPS}^2$ | Acceleration feedforward gain for rapid spin-up. |
-| `kFlywheelTargetVelocityRotationsPerSecond` | `70.0` | RPS ($\approx 4200\text{ RPM}$) | Main scoring launch speed. |
+| `kFlywheelTargetVelocityRotationsPerSecond` | `70.0` | RPS ($\approx 4200\text{ RPM}$) | Default scoring launch speed. |
 | `kFlywheelIdleVelocityRotationsPerSecond` | `20.0` | RPS ($\approx 1200\text{ RPM}$) | Idle pre-spin speed to reduce spool latency. |
 | `kFlywheelToleranceRotationsPerSecond` | `2.5` | RPS | Acceptable speed window to declare `atTargetFlywheelSpeed()`. |
 
 - [ ] Calculate initial $kV$: $\frac{12.0\text{ V}}{\text{Free Speed RPS}} = \frac{12.0}{100.0} \approx 0.12$.
 - [ ] Tune $kP$ until flywheel recovers rapidly when a ball passes through without surging or oscillating.
-- [ ] Dial in `kFlywheelTargetVelocityRotationsPerSecond` for consistent trajectory and distance.
 
 ### B. Adjustable Hood Motor Tuning
 | Variable | Default Value | Unit | Description |
@@ -209,9 +209,6 @@ Point all module bevel gears in the same direction (e.g. facing left or right), 
 | `kHoodProportionalGain` ($kP$) | `50.0` | — | Closed-loop position proportional gain on TalonFX. |
 | `kHoodDerivativeGain` ($kD$) | `0.5` | — | Closed-loop position derivative damping gain. |
 | `kHoodToleranceRadians` | $1.0^\circ$ | radians | Hood angular tolerance threshold. |
-| `kHoodStowAngleRadians` | $0^\circ$ | radians | Stowed hood angle. |
-| `kHoodLowGoalAngleRadians` | $15^\circ$ | radians | Low goal hood trajectory angle. |
-| `kHoodHighGoalAngleRadians` | $35^\circ$ | radians | High goal hood trajectory angle. |
 
 - [ ] Set exact mechanical gear ratio for the hood.
 - [ ] Set physical hard stops and software travel limits.
@@ -219,21 +216,33 @@ Point all module bevel gears in the same direction (e.g. facing left or right), 
 
 ---
 
-## 7. Superstructure State Machine Setpoints
+## 7. Auto-Aim & Field Calibration
 
-Calibrate the synchronized targets in `SuperstructureConstants` for each named preset:
+| Variable | Default Value | Description |
+|---|---|---|
+| `kBlueGoalLocation` | `(0.0, 5.55)` m | Exact field coordinates of Blue Alliance Goal. |
+| `kRedGoalLocation` | `(16.54, 5.55)` m | Exact field coordinates of Red Alliance Goal. |
+| `kHeadingProportionalGain` | `5.0` | Swerve drive rotation $kP$ for heading tracking. |
+| `kHeadingDerivativeGain` | `0.2` | Swerve drive rotation $kD$ for damping heading overshoot. |
+| `kHeadingToleranceRadians` | $1.5^\circ$ | Heading error window to declare `headingAligned`. |
+| `kAutoAimMaxSpeedMultiplier` | `0.70` | 30% reduction of max translation speed during auto-aim for safety. |
+| `AutoAim.m_flywheelSpeedMap` | $(1.5\text{m}, 55\text{RPS}) \dots (6.5\text{m}, 94\text{RPS})$ | Ballistics distance-to-flywheel velocity curve. |
+| `AutoAim.m_hoodAngleMap` | $(1.5\text{m}, 12^\circ) \dots (6.5\text{m}, 42^\circ)$ | Ballistics distance-to-hood angle curve. |
 
-| Preset Name | Arm Angle | Sequencer Height | Hood Angle | Notes |
-|---|---|---|---|---|
-| **`STOW`** | $0^\circ$ ($0.00\text{ rad}$) | $0.00\text{ m}$ | $0^\circ$ | Fully retracted starting/travel pose. |
-| **`INTAKE_GROUND`** | $-45^\circ$ ($-0.785\text{ rad}$) | $0.10\text{ m}$ | $0^\circ$ | Floor intake position. |
-| **`INTAKE_SOURCE`** | $+30^\circ$ ($+0.524\text{ rad}$) | $0.60\text{ m}$ | $0^\circ$ | Feeder station intake position. |
-| **`SPIN_UP_SHOOT`** | $+60^\circ$ ($+1.047\text{ rad}$) | $0.80\text{ m}$ | $+35^\circ$ | Target launch angle while flywheel spools up. |
-| **`SHOOT`** | $+60^\circ$ ($+1.047\text{ rad}$) | $0.80\text{ m}$ | $+35^\circ$ | Active firing pose with sequencer feed enabled. |
-| **`SCORE_LOW`** | $+45^\circ$ ($+0.785\text{ rad}$) | $0.30\text{ m}$ | $+15^\circ$ | Low goal dump angle. |
-| **`SCORE_HIGH`** | $+75^\circ$ ($+1.309\text{ rad}$) | $1.10\text{ m}$ | $+35^\circ$ | High goal scoring pose. |
-| **`CLIMB`** | $0^\circ$ ($0.00\text{ rad}$) | $1.20\text{ m}$ | $0^\circ$ | Endgame climb alignment pose. |
+- [ ] Measure exact field goal $(X, Y)$ coordinates for current season field layout.
+- [ ] Test shoot from $1.5\text{m}, 2.5\text{m}, 3.5\text{m}, 4.5\text{m}, 5.5\text{m}$ and calibrate the empirical map in [`AutoAim.java`](src/main/java/frc/robot/util/AutoAim.java).
+
+---
+
+## 8. Superstructure State Machine Setpoints
+
+| Preset Name | Arm Angle | Sequencer Height | Notes |
+|---|---|---|---|
+| **`STOW`** | $0^\circ$ ($0.00\text{ rad}$) | $0.00\text{ m}$ | Fully retracted starting/travel pose. |
+| **`INTAKE_GROUND`** | $-45^\circ$ ($-0.785\text{ rad}$) | $0.10\text{ m}$ | Floor intake position. |
+| **`INTAKE_SOURCE`** | $+30^\circ$ ($+0.524\text{ rad}$) | $0.60\text{ m}$ | Feeder station intake position. |
+| **`SPIN_UP_SHOOT`** | $+60^\circ$ ($+1.047\text{ rad}$) | $0.80\text{ m}$ | Staging pose while auto-aiming. |
+| **`CLIMB`** | $0^\circ$ ($0.00\text{ rad}$) | $1.20\text{ m}$ | Endgame climb alignment pose. |
 
 - [ ] Measure physical arm angles for floor and source collection.
-- [ ] Measure optimal shooter angle, hood angle, and sequencer height for scoring targets.
 - [ ] Verify transitions between states avoid internal mechanism collisions.

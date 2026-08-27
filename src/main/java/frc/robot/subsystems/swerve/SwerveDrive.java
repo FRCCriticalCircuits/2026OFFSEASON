@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.swerve;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -16,8 +17,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.AutoAimConstants;
 import frc.robot.Constants.SwerveConstants;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 public class SwerveDrive extends SubsystemBase {
   private final GyroIO m_gyroIO;
@@ -28,6 +31,12 @@ public class SwerveDrive extends SubsystemBase {
 
   private final SwerveDriveKinematics m_kinematics;
   private final SwerveDriveOdometry m_odometry;
+
+  private final PIDController m_headingController =
+      new PIDController(
+          AutoAimConstants.kHeadingProportionalGain,
+          AutoAimConstants.kHeadingIntegralGain,
+          AutoAimConstants.kHeadingDerivativeGain);
 
   public SwerveDrive(
       GyroIO gyroIO,
@@ -64,6 +73,9 @@ public class SwerveDrive extends SubsystemBase {
             m_kinematics,
             m_gyroInputs.yawAngle,
             getModulePositions());
+
+    m_headingController.enableContinuousInput(-Math.PI, Math.PI);
+    m_headingController.setTolerance(AutoAimConstants.kHeadingToleranceRadians);
   }
 
   /**
@@ -100,6 +112,24 @@ public class SwerveDrive extends SubsystemBase {
   }
 
   /**
+   * Drives with manual translation control while automatically locking heading onto a target angle.
+   *
+   * @param xSpeedMetersPerSecond Forward/backward velocity in meters per second.
+   * @param ySpeedMetersPerSecond Left/right velocity in meters per second.
+   * @param targetHeading Target heading as a Rotation2d.
+   * @param fieldRelative True if translation is field-relative.
+   */
+  public void driveWithHeadingLock(
+      double xSpeedMetersPerSecond,
+      double ySpeedMetersPerSecond,
+      Rotation2d targetHeading,
+      boolean fieldRelative) {
+    double rotationOutput =
+        m_headingController.calculate(getHeading().getRadians(), targetHeading.getRadians());
+    drive(xSpeedMetersPerSecond, ySpeedMetersPerSecond, rotationOutput, fieldRelative);
+  }
+
+  /**
    * Creates a command to drive the robot using joystick input suppliers.
    *
    * @param xSpeedSupplier Supplier for X axis input (-1.0 to 1.0).
@@ -122,6 +152,38 @@ public class SwerveDrive extends SubsystemBase {
                     fieldRelative),
             this)
         .withName("SwerveDrive.drive");
+  }
+
+  /**
+   * Creates an auto-aim drive command that rotates to track a target heading while the driver translates.
+   *
+   * @param xSpeedSupplier Supplier for X translation.
+   * @param ySpeedSupplier Supplier for Y translation.
+   * @param targetHeadingSupplier Supplier providing the target heading.
+   * @return An auto-aim drive command.
+   */
+  public Command autoAimDriveCommand(
+      DoubleSupplier xSpeedSupplier,
+      DoubleSupplier ySpeedSupplier,
+      Supplier<Rotation2d> targetHeadingSupplier) {
+    return Commands.run(
+            () -> {
+              double autoAimMaxSpeedMetersPerSecond =
+                  SwerveConstants.kMaxSpeedMetersPerSecond * AutoAimConstants.kAutoAimMaxSpeedMultiplier;
+              driveWithHeadingLock(
+                  xSpeedSupplier.getAsDouble() * autoAimMaxSpeedMetersPerSecond,
+                  ySpeedSupplier.getAsDouble() * autoAimMaxSpeedMetersPerSecond,
+                  targetHeadingSupplier.get(),
+                  true);
+            },
+            this)
+        .withName("SwerveDrive.autoAimDrive");
+  }
+
+  /** Checks if the robot's heading is within tolerance of a target heading. */
+  public boolean isHeadingAligned(Rotation2d targetHeading) {
+    double angleDiffRadians = Math.abs(getHeading().minus(targetHeading).getRadians());
+    return angleDiffRadians <= AutoAimConstants.kHeadingToleranceRadians;
   }
 
   /** Resets the heading (yaw) of the robot to 0 degrees. */

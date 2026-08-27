@@ -1,13 +1,16 @@
 # FRC Team 9062 — 2026 Off-Season Robot Code
 
-WPILib Command-Based Java robot project for **Team 9062** built with **CTRE Phoenix 6**, **Kraken X60 (TalonFX)** brushless motors across all mechanisms, and an **AdvantageKit-style Decoupled I/O Architecture**.
+WPILib Command-Based Java robot project for **Team 9062** built with **CTRE Phoenix 6**, **Kraken X60 (TalonFX)** brushless motors across all mechanisms, and an **AdvantageKit-style Decoupled I/O Architecture** featuring an **Automated Ball Pipeline with Dynamic Auto-Aim**.
 
 ---
 
 ## 📑 Table of Contents
 1. [Architecture Overview](#-architecture-overview)
 2. [Project File Structure](#-project-file-structure)
-3. [Ball Pipeline (Intake → Sequence → Shoot)](#-ball-pipeline)
+3. [Ball Pipeline & Auto-Aim System](#-ball-pipeline--auto-aim-system)
+   - [Sequential Intake](#1-sequential-intake)
+   - [Sequencing & Staging](#2-sequencing--staging)
+   - [Dynamic Auto-Aim & Shooting](#3-dynamic-auto-aim--shooting)
 4. [Subsystems Breakdown](#-subsystems-breakdown)
    - [Swerve Drive](#1-swerve-drive)
    - [Arm](#2-arm)
@@ -99,14 +102,16 @@ src/main/java/frc/robot/
 │       ├── SwerveModuleIO.java
 │       ├── SwerveModuleIOKraken.java
 │       └── SwerveModuleIOSim.java
-└── superstructure/                # High-level state coordinator
-    ├── Superstructure.java
-    └── SuperstructureState.java
+├── superstructure/                # High-level state coordinator
+│   ├── Superstructure.java
+│   └── SuperstructureState.java
+└── util/
+    └── AutoAim.java               # Ballistics curves & real-time target distance calculations
 ```
 
 ---
 
-## 🎯 Ball Pipeline
+## 🎯 Ball Pipeline & Auto-Aim System
 
 ```
  ┌──────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -115,13 +120,25 @@ src/main/java/frc/robot/
             1. INTAKE                       2. SEQUENCE                         3. SHOOT
        ┌──────────────────┐            ┌──────────────────┐               ┌──────────────────┐
        │   Arm + Roller   │ ─────────> │    Sequencer     │ ────────────> │  Flywheel + Hood │
-       │ (Pivot & Wheels) │            │ (Index / Feed)   │               │ (Speed & Traj.)  │
+       │ (Sequential Move)│            │ (Index / Feed)   │               │ (Auto-Aim Dynamic)│
        └──────────────────┘            └──────────────────┘               └──────────────────┘
 ```
 
-1. **Intake**: **Arm** pivots down to the ground (or feeder station) while **Roller** wheels spin forward to capture balls.
-2. **Sequence**: **Sequencer** indexes, lifts, and stages balls inside the robot until ready to fire.
-3. **Shoot**: **Shooter** positions the **Hood** to target trajectory angle and spools the **Flywheel** up to target speed; once ready, the **Sequencer** feeds balls directly into the flywheel.
+### 1. Sequential Intake
+* **Arm First**: The **Arm** pivots down to the ground angle ($-45^\circ$) while the roller is stopped.
+* **Roller Second**: Once `arm.atGoal()` is satisfied, the **Roller** wheels automatically spin forward at $+10\text{ V}$ to pull balls into the robot.
+* **Auto-Retract**: Releasing the trigger immediately returns the arm to `STOW` ($0^\circ$) and stops the roller.
+
+### 2. Sequencing & Staging
+* The **Sequencer** indexes balls from the intake and lifts/stages them inside the robot.
+* Automatically zeros its position whenever the lower limit switch is triggered.
+
+### 3. Dynamic Auto-Aim & Shooting
+When holding the **Right Trigger**:
+1. **Target Tracking**: The robot calculates its distance $d = \sqrt{\Delta X^2 + \Delta Y^2}$ and required heading $\theta_{\text{target}} = \text{atan2}(\Delta Y, \Delta X)$ relative to the alliance goal.
+2. **Heading Lock & Safety Speed Scaling**: The Swerve Drive automatically rotates the chassis to face the target while the driver continues to drive and translate freely with the left joystick (scaled to 70% max speed / 30% reduction for safety).
+3. **Ballistics Interpolation**: Dynamically computes **Flywheel Speed** and **Hood Angle** from calibrated `InterpolatingDoubleTreeMap` curves.
+4. **Auto-Feed**: Once the robot heading is locked ($\pm 1.5^\circ$), the flywheel is at speed, and the hood is at the angle, the **Sequencer** feeds balls into the flywheel!
 
 ---
 
@@ -133,7 +150,7 @@ src/main/java/frc/robot/
 - **Steer Motors**: Kraken X60 (TalonFX) with closed-loop onboard `PositionVoltage(EnableFOC = true)`, remote CANcoder feedback, and continuous wrap ($-0.5$ to $0.5$ rotations).
 - **Absolute Encoders**: CTRE CANcoder for absolute steering angle feedback.
 - **IMU**: CTRE Pigeon 2 on CANivore.
-- **Kinematics & Odometry**: `SwerveDriveKinematics` and `SwerveDriveOdometry` supporting field-relative and robot-relative driving, cosine/angle optimization, and speed desaturation.
+- **Kinematics & Odometry**: `SwerveDriveKinematics` and `SwerveDriveOdometry` supporting field-relative driving, heading lock PID (`driveWithHeadingLock`), and speed desaturation.
 
 ### 2. Arm
 - **Hardware**: Kraken X60 (TalonFX) on CANivore.
@@ -142,7 +159,7 @@ src/main/java/frc/robot/
 
 ### 3. Roller (Intake)
 - **Hardware**: Kraken X60 (TalonFX) on CANivore.
-- **Control**: Open-loop / voltage control (`runIntake()`, `runOuttake()`, `runHold()`, `stop()`).
+- **Control**: Open-loop voltage control (`runIntake()`, `runOuttake()`, `runHold()`, `stop()`).
 - **Role**: Pulls balls into the robot from the floor or feeding station.
 
 ### 4. Sequencer
@@ -154,7 +171,7 @@ src/main/java/frc/robot/
 ### 5. Shooter (Flywheel + Adjustable Hood)
 - **Hardware**:
   - **Dual Flywheel Motors**: 2x Kraken X60 (TalonFX) on CANivore in leader-follower configuration (`MotorAlignmentValue.Opposed`).
-  - **Adjustable Hood Motor**: 1x Kraken X60 (TalonFX) on CANivore for precision trajectory and launch angle control.
+  - **Adjustable Hood Motor**: 1x Kraken X60 (TalonFX) on CANivore for precision trajectory control.
 - **Control**:
   - Flywheel: Closed-loop `VelocityVoltage(EnableFOC = true)` with Slot 0 PID & Feedforward.
   - Hood: Closed-loop `PositionVoltage(EnableFOC = true)` with Slot 0 Position PID.
@@ -170,8 +187,6 @@ Coordinates all 4 mechanisms into synchronized presets:
 | **`INTAKE_SOURCE`** | $0.60\text{ m}$ | $+30^\circ$ | `INTAKE` | Flywheel `IDLE`, Hood $0^\circ$ |
 | **`SPIN_UP_SHOOT`** | $0.80\text{ m}$ | $+60^\circ$ | `HOLD` | Flywheel $70\text{ RPS}$, Hood $+35^\circ$ |
 | **`SHOOT`** | $0.80\text{ m}$ | $+60^\circ$ | `INTAKE` (feed) | Flywheel $70\text{ RPS}$, Hood $+35^\circ$ |
-| **`SCORE_LOW`** | $0.30\text{ m}$ | $+45^\circ$ | `OUTTAKE` | Flywheel $70\text{ RPS}$, Hood $+15^\circ$ |
-| **`SCORE_HIGH`** | $1.10\text{ m}$ | $+75^\circ$ | `HOLD` | Flywheel $70\text{ RPS}$, Hood $+35^\circ$ |
 | **`OUTTAKE_EJECT`** | $0.10\text{ m}$ | $-45^\circ$ | `OUTTAKE` | Flywheel `STOP`, Hood $0^\circ$ |
 | **`CLIMB`** | $1.20\text{ m}$ | $0^\circ$ | `STOP` | Flywheel `STOP`, Hood $0^\circ$ |
 
@@ -217,12 +232,10 @@ All constants are centralized in [`Constants.java`](src/main/java/frc/robot/Cons
 - `kWheelRadiusMeters`: Wheel radius in meters (e.g. $2\text{ in} = 0.0508\text{ m}$).
 - CANcoder offsets: `kFrontLeftCANcoderOffsetRotations`, `kFrontRightCANcoderOffsetRotations`, etc.
 
-### 2. Control Gains (PID + Feedforward)
-- **Arm**: `kProportionalGain`, `kIntegralGain`, `kDerivativeGain`, `kStaticGain`, `kGravityGain`, `kVelocityGain`, `kAccelerationGain`.
-- **Sequencer**: `kProportionalGain`, `kIntegralGain`, `kDerivativeGain`, `kStaticGain`, `kGravityGain`, `kVelocityGain`, `kAccelerationGain`.
-- **Shooter Flywheel**: `kFlywheelProportionalGain`, `kFlywheelVelocityGain`, `kFlywheelStaticGain`, `kFlywheelTargetVelocityRotationsPerSecond` (default: 70 RPS $\approx$ 4200 RPM).
-- **Shooter Hood**: `kHoodProportionalGain`, `kHoodDerivativeGain`, `kHoodGearRatio`, `kHoodMinAngleRadians`, `kHoodMaxAngleRadians`.
-- **Swerve Drive**: `kDriveProportionalGain`, `kDriveVelocityGain`, `kSteerProportionalGain`, `kSteerDerivativeGain`.
+### 2. Auto-Aim & Ballistics Calibration
+- `kBlueGoalLocation` & `kRedGoalLocation`: Goal coordinate offsets in field space.
+- `kHeadingProportionalGain`: Swerve heading lock rotation strength.
+- `AutoAim.m_flywheelSpeedMap` & `AutoAim.m_hoodAngleMap`: Empirical distance-to-speed/angle tables.
 
 ### 3. Current Limits
 - **Swerve Drive**: 80A stator / 40A supply
@@ -244,13 +257,10 @@ All constants are centralized in [`Constants.java`](src/main/java/frc/robot/Cons
 | **Left Stick X (Inverted)** | Translate Left / Right (Field-Relative) |
 | **Right Stick X** | Rotate Left / Right |
 | **Start Button** | Reset Gyro Heading to 0° |
-| **Left Trigger (Hold)** | **INTAKE (Ground)**: Deploy arm down + spin roller + index balls |
-| **Right Bumper (Hold)** | **INTAKE (Source)**: Position arm at feeder station + spin roller + index balls |
-| **Right Trigger (Hold)** | **SHOOT**: Automated sequence (Position hood + spool flywheel $\rightarrow$ wait until ready $\rightarrow$ feed balls via sequencer) |
+| **Left Trigger (Hold)** | **SEQUENTIAL INTAKE (Ground)**: Arm deploys $\rightarrow$ waits for angle $\rightarrow$ spins roller $\rightarrow$ stows on release |
+| **Right Bumper (Hold)** | **SEQUENTIAL INTAKE (Source)**: Arm to feeder station $\rightarrow$ spins roller $\rightarrow$ stows on release |
+| **Right Trigger (Hold)** | **DYNAMIC AUTO-AIM & SHOOT**: Rotates chassis to goal + sets flywheel speed & hood angle from distance $\rightarrow$ auto-feeds |
 | **Left Bumper (Hold)** | **OUTTAKE / EJECT**: Purge balls out in reverse |
-| **A Button (Hold)** | Superstructure → `SCORE_LOW` (Low goal dump preset) |
-| **Y Button (Hold)** | Superstructure → `SCORE_HIGH` (High goal scoring preset) |
-| **X Button (Hold)** | Superstructure → `SPIN_UP_SHOOT` (Pre-spin flywheel & position hood) |
 | **B Button (Hold)** | Superstructure → `STOW` (Manual stow override) |
 | **D-Pad Up (Hold)** | Superstructure → `CLIMB` (Endgame climb preset) |
 | *(Released / Default)* | Superstructure → `STOW` (Automatic home position) |
@@ -261,12 +271,11 @@ All constants are centralized in [`Constants.java`](src/main/java/frc/robot/Cons
 
 The following telemetry values are published every 20ms periodic cycle:
 - **Drivetrain**: `Swerve/Pose X Meters`, `Swerve/Pose Y Meters`, `Swerve/Heading Degrees`, `Swerve/Module {0-3}/Speed (m per sec)`, `Swerve/Module {0-3}/Angle (deg)`
-- **Arm**: `Arm/Angle (deg)`, `Arm/Velocity (deg per sec)`, `Arm/Goal (deg)`, `Arm/Applied Output (V)`, `Arm/Current (A)`, `Arm/At Goal`, `Arm/Forward Limit Switch`, `Arm/Reverse Limit Switch`
-- **Sequencer**: `Sequencer/Height (m)`, `Sequencer/Velocity (m per sec)`, `Sequencer/Goal (m)`, `Sequencer/Applied Output (V)`, `Sequencer/Current (A)`, `Sequencer/At Goal`, `Sequencer/Lower Limit Switch`, `Sequencer/Upper Limit Switch`
+- **Auto-Aim**: `AutoAim/Target Distance (m)`, `AutoAim/Target Heading (deg)`, `AutoAim/Heading Aligned`, `AutoAim/Ready To Fire`
+- **Arm**: `Arm/Angle (deg)`, `Arm/Velocity (deg per sec)`, `Arm/Goal (deg)`, `Arm/Applied Output (V)`, `Arm/Current (A)`, `Arm/At Goal`
+- **Sequencer**: `Sequencer/Height (m)`, `Sequencer/Velocity (m per sec)`, `Sequencer/Goal (m)`, `Sequencer/Applied Output (V)`, `Sequencer/Current (A)`, `Sequencer/At Goal`
 - **Roller**: `Roller/Velocity (RPS)`, `Roller/Applied Output (V)`, `Roller/Current (A)`, `Roller/Game Piece Detected`
-- **Shooter Flywheel**: `Shooter/Flywheel Velocity (RPS)`, `Shooter/Flywheel Target (RPS)`, `Shooter/Flywheel Output (V)`, `Shooter/Flywheel Leader Current (A)`, `Shooter/Flywheel Follower Current (A)`, `Shooter/At Target Speed`
-- **Shooter Hood**: `Shooter/Hood Angle (deg)`, `Shooter/Hood Target (deg)`, `Shooter/Hood Output (V)`, `Shooter/Hood Current (A)`, `Shooter/Hood At Target Angle`
-- **Shooter Ready**: `Shooter/Ready To Shoot` (Flywheel at speed AND Hood at angle)
+- **Shooter**: `Shooter/Flywheel Velocity (RPS)`, `Shooter/Flywheel Target (RPS)`, `Shooter/Hood Angle (deg)`, `Shooter/Hood Target (deg)`, `Shooter/Ready To Shoot`
 - **Superstructure**: `Superstructure/Current State`, `Superstructure/Desired State`, `Superstructure/At Goal`
 
 ---
@@ -300,6 +309,11 @@ if (RobotBase.isReal()) {
 ### Build Project
 ```bash
 ./gradlew build
+```
+
+### Run Unit Tests
+```bash
+./gradlew test
 ```
 
 ### Run Desktop Simulation
