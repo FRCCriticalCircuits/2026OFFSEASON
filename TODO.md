@@ -1,6 +1,6 @@
 # 📝 Robot Tuning & Setup Checklist (TODO.md)
 
-This document tracks all constants, physical dimensions, CAN IDs, current limits, and PID/feedforward gains in [`Constants.java`](src/main/java/frc/robot/Constants.java) that must be calibrated on the physical robot.
+This document tracks all constants, physical dimensions, CAN IDs, current limits, and PID/feedforward gains in [`Constants.java`](src/main/java/frc/robot/Constants.java).
 
 ---
 
@@ -18,223 +18,143 @@ This document tracks all constants, physical dimensions, CAN IDs, current limits
 
 ## 1. CAN Bus & Device ID Mapping
 
-Configure device IDs to match the physical CANivore bus topology.
+Device IDs configured from `TunerConstants.java` and `Constants.java`:
 
-- [ ] **CAN Bus Name**: `kCANBusName = "canivore"` (Default: `"canivore"`)
-- [ ] **Swerve Pigeon 2 IMU**: `kPigeon2CanId` (Default: `0`)
-- [ ] **Front Left Module**:
-  - [ ] Drive Motor: `kFrontLeftDriveMotorId` (Default: `1`)
-  - [ ] Steer Motor: `kFrontLeftSteerMotorId` (Default: `2`)
-  - [ ] CANcoder: `kFrontLeftCANcoderId` (Default: `3`)
-- [ ] **Front Right Module**:
-  - [ ] Drive Motor: `kFrontRightDriveMotorId` (Default: `4`)
-  - [ ] Steer Motor: `kFrontRightSteerMotorId` (Default: `5`)
-  - [ ] CANcoder: `kFrontRightCANcoderId` (Default: `6`)
-- [ ] **Back Left Module**:
-  - [ ] Drive Motor: `kBackLeftDriveMotorId` (Default: `7`)
-  - [ ] Steer Motor: `kBackLeftSteerMotorId` (Default: `8`)
-  - [ ] CANcoder: `kBackLeftCANcoderId` (Default: `9`)
-- [ ] **Back Right Module**:
-  - [ ] Drive Motor: `kBackRightDriveMotorId` (Default: `13`)
-  - [ ] Steer Motor: `kBackRightSteerMotorId` (Default: `11`)
-  - [ ] CANcoder: `kBackRightCANcoderId` (Default: `12`)
-- [ ] **Arm Pivot Motor**: `ArmConstants.kMotorId` (Default: `10`)
-- [ ] **Sequencer Lift Motor**: `SequencerConstants.kMotorId` (Default: `20`)
-- [ ] **Roller Motor**: `RollerConstants.kMotorId` (Default: `30`)
-- [ ] **Shooter Flywheel Motors**:
-  - [ ] Leader Motor: `ShooterConstants.kFlywheelLeaderMotorId` (Default: `40`)
-  - [ ] Follower Motor: `ShooterConstants.kFlywheelFollowerMotorId` (Default: `41`)
-- [ ] **Shooter Hood Motor**:
-  - [ ] Hood Motor: `ShooterConstants.kHoodMotorId` (Default: `42`)
+- [x] **CAN Bus Name**: `kCANBusName = ""` (Default RIO CAN bus)
+- [x] **Swerve Pigeon 2 IMU**: `kPigeon2CanId = 20`
+- [x] **Front Left Module**:
+  - [x] Drive Motor: `kFrontLeftDriveMotorId = 1`
+  - [x] Steer Motor: `kFrontLeftSteerMotorId = 2`
+  - [x] CANcoder: `kFrontLeftCANcoderId = 3`
+- [x] **Front Right Module**:
+  - [x] Drive Motor: `kFrontRightDriveMotorId = 4`
+  - [x] Steer Motor: `kFrontRightSteerMotorId = 5`
+  - [x] CANcoder: `kFrontRightCANcoderId = 6`
+- [x] **Back Left Module**:
+  - [x] Drive Motor: `kBackLeftDriveMotorId = 7`
+  - [x] Steer Motor: `kBackLeftSteerMotorId = 8`
+  - [x] CANcoder: `kBackLeftCANcoderId = 9`
+- [x] **Back Right Module**:
+  - [x] Drive Motor: `kBackRightDriveMotorId = 10`
+  - [x] Steer Motor: `kBackRightSteerMotorId = 11`
+  - [x] CANcoder: `kBackRightCANcoderId = 12`
+- [x] **Arm (Intake Deploy) Motor**: `ArmConstants.kMotorId = 30`
+- [x] **Roller (Intake Leader) Motor**: `RollerConstants.kMotorId = 31`
+- [x] **Sequencer (Feeder) Motor**: `SequencerConstants.kMotorId = 34`
+- [x] **Shooter Flywheel Leader Motor**: `ShooterConstants.kFlywheelLeaderMotorId = 35`
+- [x] **Shooter Flywheel Follower Motor**: `ShooterConstants.kFlywheelFollowerMotorId = 36`
+- [x] **Shooter Hood Motor**: `ShooterConstants.kHoodMotorId = 37`
 
 ---
 
 ## 2. Swerve Drivetrain Setup & Calibration
 
 ### Physical Dimensions
-| Variable | Default Value | Unit | Description / Tuning Procedure |
+| Variable | Configured Value | Unit | Source |
 |---|---|---|---|
-| `kTrackWidthMeters` | `0.0` | meters | Center-to-center distance between left and right wheels. |
-| `kWheelbaseMeters` | `0.0` | meters | Center-to-center distance between front and back wheels. |
-| `kWheelRadiusMeters` | `0.0` | meters | Measured wheel radius ($2\text{ in} = 0.0508\text{ m}$). |
-
-- [ ] Measure and set `kTrackWidthMeters`.
-- [ ] Measure and set `kWheelbaseMeters`.
-- [ ] Measure and set `kWheelRadiusMeters`.
+| `kTrackWidthMeters` | `0.55626` ($21.9\text{ in}$) | meters | TunerConstants ($\pm 10.95\text{ in}$) |
+| `kWheelbaseMeters` | `0.55626` ($21.9\text{ in}$) | meters | TunerConstants ($\pm 10.95\text{ in}$) |
+| `kWheelRadiusMeters` | `0.0508` ($2.0\text{ in}$) | meters | TunerConstants (`kWheelRadius = Inches.of(2)`) |
 
 ### CANcoder Magnet Offsets & Inversions
-Point all module bevel gears in the same direction (e.g. facing left or right), read the absolute rotation value in Phoenix Tuner X, and record the opposite offset.
-
-| Variable | Default Value | Unit | Description |
+| Variable | Configured Value | Unit | Source |
 |---|---|---|---|
-| `kFrontLeftCANcoderOffsetRotations` | `0.0` | rotations | Zero offset for FL steering encoder. |
-| `kFrontRightCANcoderOffsetRotations` | `0.0` | rotations | Zero offset for FR steering encoder. |
-| `kBackLeftCANcoderOffsetRotations` | `0.0` | rotations | Zero offset for BL steering encoder. |
-| `kBackRightCANcoderOffsetRotations` | `0.0` | rotations | Zero offset for BR steering encoder. |
-| `kFrontLeftDriveInverted` | `false` | boolean | Set `true` if FL wheel drives backward when commanded forward. |
-| `kFrontRightDriveInverted` | `false` | boolean | Set `true` if FR wheel drives backward when commanded forward. |
-| `kBackLeftDriveInverted` | `false` | boolean | Set `true` if BL wheel drives backward when commanded forward. |
-| `kBackRightDriveInverted` | `false` | boolean | Set `true` if BR wheel drives backward when commanded forward. |
-
-- [ ] Zero Front Left CANcoder offset.
-- [ ] Zero Front Right CANcoder offset.
-- [ ] Zero Back Left CANcoder offset.
-- [ ] Zero Back Right CANcoder offset.
-- [ ] Verify drive motor directions.
+| `kFrontLeftCANcoderOffsetRotations` | `-0.252197265625` | rotations | TunerConstants |
+| `kFrontRightCANcoderOffsetRotations` | `-0.48046875` | rotations | TunerConstants |
+| `kBackLeftCANcoderOffsetRotations` | `0.327880859375` | rotations | TunerConstants |
+| `kBackRightCANcoderOffsetRotations` | `-0.247314453125` | rotations | TunerConstants |
+| `kFrontLeftDriveInverted` | `false` | boolean | TunerConstants |
+| `kFrontRightDriveInverted` | `true` | boolean | TunerConstants |
+| `kBackLeftDriveInverted` | `false` | boolean | TunerConstants |
+| `kBackRightDriveInverted` | `true` | boolean | TunerConstants |
 
 ### Drivetrain Gains & Current Limits
-| Variable | Default Value | Description |
+| Variable | Configured Value | Description |
 |---|---|---|
-| `kMaxSpeedMetersPerSecond` | `4.5` | Max robot translation velocity. |
-| `kMaxAngularSpeedRadiansPerSecond` | $2\pi$ ($\approx 6.28$) | Max robot angular rotation speed. |
-| `kDriveStatorCurrentLimitAmps` | `80.0` | Drive motor peak torque limit. |
-| `kDriveSupplyCurrentLimitAmps` | `40.0` | Drive motor battery protection limit. |
-| `kSteerStatorCurrentLimitAmps` | `40.0` | Steer motor peak torque limit. |
-| `kSteerSupplyCurrentLimitAmps` | `20.0` | Steer motor battery protection limit. |
-| `kDriveProportionalGain` | `0.1` | Drive velocity feedback proportional gain ($kP$). |
-| `kDriveVelocityGain` | `0.12` | Drive velocity feedforward gain ($kV$). |
-| `kSteerProportionalGain` | `100.0` | Steering position proportional gain ($kP$). |
-| `kSteerDerivativeGain` | `0.5` | Steering position derivative gain ($kD$). |
-
-- [ ] Tune steer $kP$ and $kD$ to prevent oscillation while maintaining snappy heading response.
-- [ ] Tune drive $kV$ and $kP$ for accurate velocity tracking.
+| `kMaxSpeedMetersPerSecond` | `5.12` | TunerConstants (`kSpeedAt12Volts`) |
+| `kDriveGearRatio` | `6.026785714285714` | TunerConstants |
+| `kSteerGearRatio` | `26.09090909090909` | TunerConstants |
+| `kDriveStatorCurrentLimitAmps` | `120.0` | Peak slip torque limit |
+| `kDriveSupplyCurrentLimitAmps` | `60.0` | Supply current limit |
+| `kSteerStatorCurrentLimitAmps` | `60.0` | Steer stator limit |
+| `kSteerSupplyCurrentLimitAmps` | `40.0` | Steer supply limit |
+| `kSteerProportionalGain` ($kP$) | `59.5` | TunerConstants |
+| `kSteerDerivativeGain` ($kD$) | `0.075` | TunerConstants |
+| `kDriveProportionalGain` ($kP$) | `0.05` | TunerConstants |
 
 ---
 
 ## 3. Arm Mechanism Tuning
 
-### Physical Properties & Limits
-| Variable | Default Value | Unit | Description |
-|---|---|---|---|
-| `kGearRatio` | `50.0` | ratio | Total mechanical gear reduction from Kraken motor to arm axle. |
-| `kArmLengthMeters` | `0.5` | meters | Center of rotation to end of arm. |
-| `kArmMassKilograms` | `3.0` | kg | Estimated / CAD mass of the moving arm assembly. |
-| `kMinAngleRadians` | $-90^\circ$ | radians | Minimum allowable software travel limit. |
-| `kMaxAngleRadians` | $+90^\circ$ | radians | Maximum allowable software travel limit. |
-
-- [ ] Set exact mechanical gear ratio.
-- [ ] Measure physical travel limits and set software soft limits.
-
-### Control Gains (Profiled PID + Feedforward)
-| Variable | Default Value | Description / Tuning Procedure |
+| Variable | Configured Value | Description |
 |---|---|---|
-| `kGravityGain` ($kG$) | `0.0` | Voltage required to hold arm horizontally against gravity ($0^\circ$). |
-| `kStaticGain` ($kS$) | `0.0` | Voltage required to overcome static friction. |
-| `kVelocityGain` ($kV$) | `0.0` | Voltage per unit of target angular velocity. |
-| `kAccelerationGain` ($kA$) | `0.0` | Voltage per unit of target angular acceleration. |
-| `kProportionalGain` ($kP$) | `0.0` | Feedback proportional gain. |
-| `kIntegralGain` ($kI$) | `0.0` | Feedback integral gain. |
-| `kDerivativeGain` ($kD$) | `0.0` | Feedback derivative gain (dampens overshoot). |
-| `kMaxVelocityRadiansPerSecond` | $\pi$ ($180^\circ/\text{s}$) | Trapezoid profile max velocity limit. |
-| `kMaxAccelerationRadiansPerSecondSquared` | $2\pi$ ($360^\circ/\text{s}^2$) | Trapezoid profile max acceleration limit. |
-| `kToleranceRadians` | $2.0^\circ$ | Position tolerance threshold to declare `atGoal()`. |
-
-- [ ] Measure $kG$: Apply manual voltage until the arm balances horizontally without drifting.
-- [ ] Tune $kP$ and $kD$ using SysId or manual test steps.
-- [ ] Adjust trapezoid profile velocity and acceleration for smooth movement.
+| `kMotorId` | `30` | Kraken X60 intake pivot |
+| `kProportionalGain` ($kP$) | `25.0` | Position proportional gain |
+| `kSupplyCurrentLimitAmps` | `40.0` | Supply current limit |
+| `kMinAngleRadians` | $-90^\circ$ | Soft limit |
+| `kMaxAngleRadians` | $+90^\circ$ | Soft limit |
 
 ---
 
 ## 4. Sequencer Mechanism Tuning (Spinning Feeder)
 
-### Physical Properties & Limits
-| Variable | Default Value | Unit | Description |
-|---|---|---|---|
-| `kGearRatio` | `1.0` | ratio | Total gear reduction between Kraken motor and sequencer feeder rollers/belts. |
-| `kStatorCurrentLimitAmps` | `80.0` | amps | Peak stator current limit. |
-| `kSupplyCurrentLimitAmps` | `40.0` | amps | Continuous battery protection limit. |
-
-- [ ] Set exact mechanical gear ratio for the sequencer feeder.
-
-### Control Gains (Velocity Feedforward with kV)
-| Variable | Default Value | Description / Tuning Procedure |
+| Variable | Configured Value | Description |
 |---|---|---|
-| `kVelocityGain` ($kV$) | `0.12` | Volts per RPS feedforward gain ($12\text{ V} / \text{Max RPS}$). |
-| `kStaticGain` ($kS$) | `0.25` | Friction compensation voltage to start spinning. |
-| `kProportionalGain` ($kP$) | `0.1` | Velocity closed-loop feedback gain on TalonFX Slot 0. |
-| `kFeedVelocityRotationsPerSecond` | `50.0` | Target feed velocity ($\approx 3000\text{ RPM}$) to push balls into shooter. |
-| `kToleranceRotationsPerSecond` | `2.5` | Velocity tolerance window. |
-
-- [ ] Calculate initial $kV$: $\frac{12.0\text{ V}}{\text{Free Speed RPS}} \approx 0.12$.
-- [ ] Calibrate `kFeedVelocityRotationsPerSecond` to deliver rapid, jam-free ball transfer into the flywheel.
+| `kMotorId` | `34` | Feeder motor ID |
+| `kSupplyCurrentLimitAmps` | `50.0` | Supply current limit |
+| `kVelocityGain` ($kV$) | `0.12` | Feedforward gain (volts per RPS) |
+| `kStaticGain` ($kS$) | `0.25` | Friction compensation |
+| `kFeedVelocityRotationsPerSecond` | `50.0` | Target feeding speed ($\approx 3000\text{ RPM}$) |
 
 ---
 
 ## 5. Roller (Intake) Tuning
 
-| Variable | Default Value | Description |
+| Variable | Configured Value | Description |
 |---|---|---|
-| `kGearRatio` | `3.0` | Gear ratio between Kraken motor and intake rollers. |
-| `kStatorCurrentLimitAmps` | `60.0` | Peak torque limit for intake rollers. |
-| `kSupplyCurrentLimitAmps` | `40.0` | Continuous battery draw limit. |
-| `kIntakeAppliedVolts` | `10.0` | Forward intake speed for pulling balls into the robot. |
-| `kOuttakeAppliedVolts` | `-8.0` | Reverse speed for ejecting balls. |
-| `kHoldAppliedVolts` | `2.0` | Low retention voltage for holding a captured ball in place. |
-
-- [ ] Test intake roller speed with game pieces to ensure positive grip without wheel slip.
-- [ ] Test retention hold voltage.
+| `kMotorId` | `31` | Intake leader motor ID |
+| `kSupplyCurrentLimitAmps` | `60.0` | Supply current limit |
+| `kIntakeAppliedVolts` | `8.0` | Forward intake voltage |
+| `kEjectAppliedVolts` | `-8.0` | Reverse eject voltage |
+| `kHoldAppliedVolts` | `2.0` | Retention voltage |
 
 ---
 
 ## 6. Shooter (Flywheel + Hood) Tuning
 
-### A. Flywheel Motor Tuning
-| Variable | Default Value | Unit | Description |
-|---|---|---|---|
-| `kFlywheelProportionalGain` ($kP$) | `0.12` | — | Velocity closed-loop proportional gain on TalonFX. |
-| `kFlywheelStaticGain` ($kS$) | `0.25` | volts | Voltage to overcome flywheel friction. |
-| `kFlywheelVelocityGain` ($kV$) | `0.12` | volts / RPS | Velocity feedforward gain ($12\text{ V} / \text{Max RPS}$). |
-| `kFlywheelAccelerationGain` ($kA$) | `0.01` | volts / $\text{RPS}^2$ | Acceleration feedforward gain for rapid spin-up. |
-| `kFlywheelTargetVelocityRotationsPerSecond` | `70.0` | RPS ($\approx 4200\text{ RPM}$) | Default scoring launch speed. |
-| `kFlywheelIdleVelocityRotationsPerSecond` | `20.0` | RPS ($\approx 1200\text{ RPM}$) | Idle pre-spin speed to reduce spool latency. |
-| `kFlywheelToleranceRotationsPerSecond` | `2.5` | RPS | Acceptable speed window to declare `atTargetFlywheelSpeed()`. |
-
-- [ ] Calculate initial $kV$: $\frac{12.0\text{ V}}{\text{Free Speed RPS}} = \frac{12.0}{100.0} \approx 0.12$.
-- [ ] Tune $kP$ until flywheel recovers rapidly when a ball passes through without surging or oscillating.
-
-### B. Adjustable Hood Motor Tuning
-| Variable | Default Value | Unit | Description |
-|---|---|---|---|
-| `kHoodGearRatio` | `50.0` | ratio | Gear reduction between Kraken motor and adjustable hood pivot. |
-| `kHoodMinAngleRadians` | $0^\circ$ ($0.0\text{ rad}$) | radians | Minimum hood angle soft limit. |
-| `kHoodMaxAngleRadians` | $45^\circ$ ($0.785\text{ rad}$) | radians | Maximum hood angle soft limit. |
-| `kHoodStatorCurrentLimitAmps` | `40.0` | amps | Peak stator current limit for hood motor. |
-| `kHoodSupplyCurrentLimitAmps` | `20.0` | amps | Supply current limit. |
-| `kHoodProportionalGain` ($kP$) | `50.0` | — | Closed-loop position proportional gain on TalonFX. |
-| `kHoodDerivativeGain` ($kD$) | `0.5` | — | Closed-loop position derivative damping gain. |
-| `kHoodToleranceRadians` | $1.0^\circ$ | radians | Hood angular tolerance threshold. |
-
-- [ ] Set exact mechanical gear ratio for the hood.
-- [ ] Set physical hard stops and software travel limits.
-- [ ] Tune position PID ($kP$, $kD$) for quick and stable hood positioning.
+| Variable | Configured Value | Description |
+|---|---|---|
+| `kFlywheelLeaderMotorId` | `35` | Flywheel leader motor |
+| `kFlywheelFollowerMotorId` | `36` | Flywheel follower motor |
+| `kFlywheelProportionalGain` ($kP$) | `0.15` | Flywheel velocity $kP$ |
+| `kFlywheelSupplyCurrentLimitAmps` | `60.0` | Flywheel supply limit |
+| `kHoodMotorId` | `37` | Hood motor ID |
+| `kHoodProportionalGain` ($kP$) | `20.0` | Hood position $kP$ |
+| `kHoodSupplyCurrentLimitAmps` | `40.0` | Hood supply limit |
+| `kHoodMinAngleRadians` | $0^\circ$ | Hood minimum angle |
+| `kHoodMaxAngleRadians` | $60^\circ$ | Hood maximum angle |
 
 ---
 
 ## 7. Auto-Aim & Field Calibration
 
-| Variable | Default Value | Description |
+| Variable | Configured Value | Description |
 |---|---|---|
-| `kBlueGoalLocation` | `(0.0, 5.55)` m | Exact field coordinates of Blue Alliance Goal. |
-| `kRedGoalLocation` | `(16.54, 5.55)` m | Exact field coordinates of Red Alliance Goal. |
-| `kHeadingProportionalGain` | `5.0` | Swerve drive rotation $kP$ for heading tracking. |
-| `kHeadingDerivativeGain` | `0.2` | Swerve drive rotation $kD$ for damping heading overshoot. |
-| `kHeadingToleranceRadians` | $1.5^\circ$ | Heading error window to declare `headingAligned`. |
-| `kAutoAimMaxSpeedMultiplier` | `0.70` | 30% reduction of max translation speed during auto-aim for safety. |
-| `AutoAim.m_flywheelSpeedMap` | $(1.5\text{m}, 55\text{RPS}) \dots (6.5\text{m}, 94\text{RPS})$ | Ballistics distance-to-flywheel velocity curve. |
-| `AutoAim.m_hoodAngleMap` | $(1.5\text{m}, 12^\circ) \dots (6.5\text{m}, 42^\circ)$ | Ballistics distance-to-hood angle curve. |
-
-- [ ] Measure exact field goal $(X, Y)$ coordinates for current season field layout.
-- [ ] Test shoot from $1.5\text{m}, 2.5\text{m}, 3.5\text{m}, 4.5\text{m}, 5.5\text{m}$ and calibrate the empirical map in [`AutoAim.java`](src/main/java/frc/robot/util/AutoAim.java).
+| `kBlueGoalLocation` | `(4.626m, 4.035m)` | Blue scoring hub center ($182.11\text{ in}$) |
+| `kRedGoalLocation` | `(11.915m, 4.035m)` | Red scoring hub center ($651.22 - 182.11\text{ in}$) |
+| `kHeadingProportionalGain` | `9.0` | Heading tracking $kP$ |
+| `kHeadingDerivativeGain` | `0.15` | Heading damping $kD$ |
+| `kHeadingToleranceRadians` | $2.0^\circ$ | Heading alignment tolerance |
+| `kTargetAimOffset` | $180^\circ$ (`Rotation2d.k180deg`) | Back-facing shooter offset |
+| `kAutoAimMaxSpeedMultiplier` | `0.70` | 30% reduction during auto-aim |
 
 ---
 
 ## 8. Superstructure State Machine Setpoints
 
-| Preset Name | Arm Angle | Sequencer Height | Notes |
-|---|---|---|---|
-| **`STOW`** | $0^\circ$ ($0.00\text{ rad}$) | $0.00\text{ m}$ | Fully retracted starting/travel pose. |
-| **`INTAKE_GROUND`** | $-45^\circ$ ($-0.785\text{ rad}$) | $0.10\text{ m}$ | Floor intake position. |
-| **`SPIN_UP_SHOOT`** | $+60^\circ$ ($+1.047\text{ rad}$) | $0.80\text{ m}$ | Staging pose while auto-aiming. |
-
-- [ ] Measure physical arm angle for floor collection.
-- [ ] Verify transitions between states avoid internal mechanism collisions.
+| Preset Name | Arm Angle | Sequencer | Roller | Shooter |
+|---|---|---|---|---|
+| **`STOW`** | $0^\circ$ | `STOP` | `STOP` | `STOP` |
+| **`INTAKE_GROUND`** | $-75^\circ$ | `STOP` | `INTAKE` ($8\text{V}$) | `IDLE` |
+| **`SPIN_UP_SHOOT`** | $+60^\circ$ | `STOP` | `HOLD` ($2\text{V}$) | Spooling / Positioning |
+| **`SHOOT`** | $+60^\circ$ | **`FEED`** ($50\text{ RPS}$) | `INTAKE` ($8\text{V}$) | At Speed / Angle |

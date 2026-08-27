@@ -35,7 +35,7 @@ public class Roller extends SubsystemBase {
 
   /** Runs the roller in reverse to eject/outtake game pieces. */
   public void runOuttake() {
-    setVoltage(RollerConstants.kOuttakeAppliedVolts);
+    setVoltage(RollerConstants.kEjectAppliedVolts);
   }
 
   /** Runs the roller at low voltage to hold/retain a game piece. */

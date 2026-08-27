@@ -4,7 +4,9 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
@@ -15,139 +17,145 @@ import edu.wpi.first.math.geometry.Translation2d;
  */
 public final class Constants {
 
-  /** CAN bus name for all CTRE devices (CANivore). */
-  public static final String kCANBusName = "canivore";
+  /** CAN bus name for all CTRE devices ("" for default RIO bus or "canivore"). */
+  public static final String kCANBusName = "";
 
   public static final class DriverConstants {
     public static final int kDriverControllerPort = 0;
+    public static final double kTriggerThreshold = 0.25;
   }
 
   public static final class ArmConstants {
-    // CAN ID
-    public static final int kMotorId = 10; // TODO: Set to actual CAN ID
+    // CAN ID (Intake Pivot / Deploy Motor)
+    public static final int kMotorId = 30;
 
     // Physical Constants
-    public static final double kGearRatio = 50.0; // TODO: Tune this value
-    public static final double kArmLengthMeters = 0.5; // TODO: Tune this value
-    public static final double kArmMassKilograms = 3.0; // TODO: Tune this value
-    public static final double kMinAngleRadians = Math.toRadians(-90.0); // TODO: Tune this value
-    public static final double kMaxAngleRadians = Math.toRadians(90.0); // TODO: Tune this value
+    public static final double kGearRatio = 50.0;
+    public static final double kArmLengthMeters = Units.inchesToMeters(17.7); // 0.45 m
+    public static final double kArmMassKilograms = 3.0;
+    public static final double kMinAngleRadians = Math.toRadians(-90.0);
+    public static final double kMaxAngleRadians = Math.toRadians(90.0);
 
     // Kraken X60 Current Limits
-    public static final double kStatorCurrentLimitAmps = 60.0; // TODO: Tune this value
-    public static final double kSupplyCurrentLimitAmps = 40.0; // TODO: Tune this value
+    public static final double kStatorCurrentLimitAmps = 60.0;
+    public static final double kSupplyCurrentLimitAmps = 40.0;
 
-    // Control Gains (PID + Feedforward) — used by WPILib ProfiledPIDController & ArmFeedforward
-    public static final double kProportionalGain = 0.0; // TODO: Tune this value
-    public static final double kIntegralGain = 0.0; // TODO: Tune this value
-    public static final double kDerivativeGain = 0.0; // TODO: Tune this value
-    public static final double kStaticGain = 0.0; // TODO: Tune this value
-    public static final double kGravityGain = 0.0; // TODO: Tune this value — gravity compensation (volts)
-    public static final double kVelocityGain = 0.0; // TODO: Tune this value
-    public static final double kAccelerationGain = 0.0; // TODO: Tune this value
+    // Control Gains (PID + Feedforward)
+    public static final double kProportionalGain = 25.0;
+    public static final double kIntegralGain = 0.0;
+    public static final double kDerivativeGain = 0.0;
+    public static final double kStaticGain = 0.0;
+    public static final double kGravityGain = 0.0;
+    public static final double kVelocityGain = 0.0;
+    public static final double kAccelerationGain = 0.0;
 
     // Profile Constraints
-    public static final double kMaxVelocityRadiansPerSecond = Math.PI; // TODO: Tune this value
-    public static final double kMaxAccelerationRadiansPerSecondSquared = Math.PI * 2.0; // TODO: Tune this value
-    public static final double kToleranceRadians = Math.toRadians(2.0); // TODO: Tune this value
+    public static final double kMaxVelocityRadiansPerSecond = Math.PI * 2.0;
+    public static final double kMaxAccelerationRadiansPerSecondSquared = Math.PI * 4.0;
+    public static final double kToleranceRadians = Math.toRadians(2.0);
   }
 
   public static final class RollerConstants {
-    // CAN ID
-    public static final int kMotorId = 30; // TODO: Set to actual CAN ID
+    // CAN ID (Intake Roller Leader)
+    public static final int kMotorId = 31;
 
     // Physical Constants
-    public static final double kGearRatio = 3.0; // TODO: Tune this value
+    public static final double kGearRatio = 1.0;
 
     // Kraken X60 Current Limits
-    public static final double kStatorCurrentLimitAmps = 60.0; // TODO: Tune this value
-    public static final double kSupplyCurrentLimitAmps = 40.0; // TODO: Tune this value
+    public static final double kStatorCurrentLimitAmps = 60.0;
+    public static final double kSupplyCurrentLimitAmps = 60.0;
 
     // Applied Voltages for Roller Actions
-    public static final double kIntakeAppliedVolts = 10.0; // TODO: Tune this value
-    public static final double kOuttakeAppliedVolts = -8.0; // TODO: Tune this value
-    public static final double kHoldAppliedVolts = 2.0; // TODO: Tune this value
+    public static final double kIntakeAppliedVolts = 8.0;
+    public static final double kEjectAppliedVolts = -8.0;
+    public static final double kHoldAppliedVolts = 2.0;
   }
 
   public static final class SequencerConstants {
-    // CAN ID
-    public static final int kMotorId = 20; // TODO: Set to actual CAN ID
+    // CAN ID (Feeder Motor)
+    public static final int kMotorId = 34;
 
     // Physical Constants
-    public static final double kGearRatio = 1.0; // TODO: Tune this value
+    public static final double kGearRatio = 1.0;
 
-    // Kraken X60 Current Limits
-    public static final double kStatorCurrentLimitAmps = 80.0; // TODO: Tune this value
-    public static final double kSupplyCurrentLimitAmps = 40.0; // TODO: Tune this value
+    // Current Limits
+    public static final double kStatorCurrentLimitAmps = 80.0;
+    public static final double kSupplyCurrentLimitAmps = 50.0;
 
     // Velocity Feedforward Control Gain (kV) & Feedback
-    public static final double kVelocityGain = 0.12; // TODO: Tune this value (volts per RPS)
-    public static final double kStaticGain = 0.25;   // TODO: Tune this value (volts)
-    public static final double kProportionalGain = 0.1; // TODO: Tune this value
+    public static final double kVelocityGain = 0.12; // Volts per RPS
+    public static final double kStaticGain = 0.25;   // Volts
+    public static final double kProportionalGain = 0.1;
 
     // Operating Setpoint (Rotations per second)
-    public static final double kFeedVelocityRotationsPerSecond = 50.0; // ~3000 RPM feed speed // TODO: Tune this value
-    public static final double kToleranceRotationsPerSecond = 2.5; // TODO: Tune this value
+    public static final double kFeedVelocityRotationsPerSecond = 50.0; // ~3000 RPM feed speed
+    public static final double kToleranceRotationsPerSecond = 2.5;
   }
 
   public static final class ShooterConstants {
-    // ─── Flywheel Motors (Dual Kraken X60) ───────────────────────────────────
-    public static final int kFlywheelLeaderMotorId = 40; // TODO: Set to actual CAN ID
-    public static final int kFlywheelFollowerMotorId = 41; // TODO: Set to actual CAN ID
-    public static final double kFlywheelGearRatio = 1.0; // TODO: Tune this value
+    // ─── Flywheel Motors (Kraken X60) ────────────────────────────────────────
+    public static final int kFlywheelLeaderMotorId = 35;
+    public static final int kFlywheelFollowerMotorId = 36;
+    public static final double kFlywheelGearRatio = 1.0;
 
-    public static final double kFlywheelStatorCurrentLimitAmps = 80.0; // TODO: Tune this value
-    public static final double kFlywheelSupplyCurrentLimitAmps = 40.0; // TODO: Tune this value
+    public static final double kFlywheelStatorCurrentLimitAmps = 80.0;
+    public static final double kFlywheelSupplyCurrentLimitAmps = 60.0;
 
     // Flywheel Velocity Closed-Loop PID & Feedforward Gains (Slot 0 on TalonFX)
-    public static final double kFlywheelProportionalGain = 0.12; // TODO: Tune this value
-    public static final double kFlywheelIntegralGain = 0.0; // TODO: Tune this value
-    public static final double kFlywheelDerivativeGain = 0.0; // TODO: Tune this value
-    public static final double kFlywheelStaticGain = 0.25; // TODO: Tune this value
-    public static final double kFlywheelVelocityGain = 0.12; // TODO: Tune this value
-    public static final double kFlywheelAccelerationGain = 0.01; // TODO: Tune this value
+    public static final double kFlywheelProportionalGain = 0.15;
+    public static final double kFlywheelIntegralGain = 0.0;
+    public static final double kFlywheelDerivativeGain = 0.0;
+    public static final double kFlywheelStaticGain = 0.25;
+    public static final double kFlywheelVelocityGain = 0.12;
+    public static final double kFlywheelAccelerationGain = 0.01;
 
     // Flywheel Target Velocity Setpoints (rotations per second)
-    public static final double kFlywheelTargetVelocityRotationsPerSecond = 70.0; // ~4200 RPM // TODO: Tune this value
-    public static final double kFlywheelIdleVelocityRotationsPerSecond = 20.0; // ~1200 RPM idle spool // TODO: Tune this value
-    public static final double kFlywheelToleranceRotationsPerSecond = 2.5; // TODO: Tune this value
+    public static final double kFlywheelTargetVelocityRotationsPerSecond = 70.0; // ~4200 RPM
+    public static final double kFlywheelIdleVelocityRotationsPerSecond = 20.0; // ~1200 RPM idle spool
+    public static final double kFlywheelToleranceRotationsPerSecond = 2.5; // (150 RPM)
 
-    // ─── Hood Motor (Kraken X60) ─────────────────────────────────────────────
-    public static final int kHoodMotorId = 42; // TODO: Set to actual CAN ID
-    public static final double kHoodGearRatio = 50.0; // TODO: Tune this value
+    // ─── Hood Motor (Kraken X44 / X60) ───────────────────────────────────────
+    public static final int kHoodMotorId = 37;
+    public static final double kHoodGearRatio = 1.0;
 
-    public static final double kHoodMinAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
-    public static final double kHoodMaxAngleRadians = Math.toRadians(45.0); // TODO: Tune this value
+    public static final double kHoodMinAngleRadians = Math.toRadians(0.0);
+    public static final double kHoodMaxAngleRadians = Math.toRadians(60.0);
 
-    public static final double kHoodStatorCurrentLimitAmps = 40.0; // TODO: Tune this value
-    public static final double kHoodSupplyCurrentLimitAmps = 20.0; // TODO: Tune this value
+    public static final double kHoodStatorCurrentLimitAmps = 40.0;
+    public static final double kHoodSupplyCurrentLimitAmps = 40.0;
 
     // Hood Position Closed-Loop PID Gains (Slot 0 on TalonFX)
-    public static final double kHoodProportionalGain = 50.0; // TODO: Tune this value
-    public static final double kHoodIntegralGain = 0.0; // TODO: Tune this value
-    public static final double kHoodDerivativeGain = 0.5; // TODO: Tune this value
-    public static final double kHoodToleranceRadians = Math.toRadians(1.0); // TODO: Tune this value
+    public static final double kHoodProportionalGain = 20.0;
+    public static final double kHoodIntegralGain = 0.0;
+    public static final double kHoodDerivativeGain = 0.0;
+    public static final double kHoodToleranceRadians = Math.toRadians(1.0);
 
     // Hood Angle Preset Targets
-    public static final double kHoodStowAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
-    public static final double kHoodLowGoalAngleRadians = Math.toRadians(15.0); // TODO: Tune this value
-    public static final double kHoodHighGoalAngleRadians = Math.toRadians(35.0); // TODO: Tune this value
+    public static final double kHoodStowAngleRadians = Math.toRadians(0.0);
   }
 
   public static final class AutoAimConstants {
-    // ─── Field Goal Locations (meters in WPILib field coordinates) ───────────
-    public static final Translation2d kBlueGoalLocation = new Translation2d(0.0, 5.55); // TODO: Set to exact Blue goal (m)
-    public static final Translation2d kRedGoalLocation = new Translation2d(16.54, 5.55); // TODO: Set to exact Red goal (m)
+    // ─── Field Goal Locations (2026 REBUILT Field Coordinates) ───────────────
+    // Field dimensions: 651.22 in x 317.69 in. Hub distance from alliance wall: 182.11 in.
+    public static final Translation2d kBlueGoalLocation =
+        new Translation2d(Units.inchesToMeters(182.11), Units.inchesToMeters(317.69) / 2.0);
+    public static final Translation2d kRedGoalLocation =
+        new Translation2d(
+            Units.inchesToMeters(651.22 - 182.11), Units.inchesToMeters(317.69) / 2.0);
 
     // ─── Drivetrain Heading Alignment PID ────────────────────────────────────
-    public static final double kHeadingProportionalGain = 5.0; // TODO: Tune this value
-    public static final double kHeadingIntegralGain = 0.0; // TODO: Tune this value
-    public static final double kHeadingDerivativeGain = 0.2; // TODO: Tune this value
-    public static final double kHeadingToleranceRadians = Math.toRadians(1.5); // TODO: Tune this value
+    public static final double kHeadingProportionalGain = 9.0;
+    public static final double kHeadingIntegralGain = 0.0;
+    public static final double kHeadingDerivativeGain = 0.15;
+    public static final double kHeadingToleranceRadians = Math.toRadians(2.0);
+
+    // Shooter exits off the back of the chassis (180 deg offset)
+    public static final Rotation2d kTargetAimOffset = Rotation2d.k180deg;
 
     // ─── Distance Boundaries ─────────────────────────────────────────────────
-    public static final double kMinDistanceMeters = 1.0; // Minimum valid shooting range (m)
-    public static final double kMaxDistanceMeters = 7.0; // Maximum valid shooting range (m)
+    public static final double kMinDistanceMeters = 1.0;
+    public static final double kMaxDistanceMeters = 7.0;
 
     // ─── Safety Speed Reduction ──────────────────────────────────────────────
     public static final double kAutoAimMaxSpeedMultiplier = 0.70; // 30% speed reduction during auto-aim
@@ -155,80 +163,80 @@ public final class Constants {
 
   public static final class SwerveConstants {
     // ─── IMU ─────────────────────────────────────────────────────────────────
-    public static final int kPigeon2CanId = 0; // TODO: Set to actual CAN ID
+    public static final int kPigeon2CanId = 20;
 
     // ─── Robot Dimensions ────────────────────────────────────────────────────
-    public static final double kTrackWidthMeters = 0.0; // TODO: Set to actual track width (m)
-    public static final double kWheelbaseMeters = 0.0; // TODO: Set to actual wheelbase (m)
+    public static final double kTrackWidthMeters = Units.inchesToMeters(21.9); // 2 * 10.95 in = 0.55626 m
+    public static final double kWheelbaseMeters = Units.inchesToMeters(21.9);  // 2 * 10.95 in = 0.55626 m
 
-    // ─── Module Gear Ratios (SDS MK4i L2) ────────────────────────────────────
-    public static final double kDriveGearRatio = 6.75; // MK4i L2 drive ratio
-    public static final double kSteerGearRatio = 150.0 / 7.0; // MK4i L2 steer ratio
+    // ─── Module Gear Ratios ──────────────────────────────────────────────────
+    public static final double kDriveGearRatio = 6.026785714285714;
+    public static final double kSteerGearRatio = 26.09090909090909;
 
     // ─── Wheel ───────────────────────────────────────────────────────────────
-    public static final double kWheelRadiusMeters = 0.0; // TODO: Set to actual wheel radius (m)
+    public static final double kWheelRadiusMeters = Units.inchesToMeters(2.0); // 0.0508 m
     public static final double kWheelCircumferenceMeters = 2.0 * Math.PI * kWheelRadiusMeters;
 
     // ─── Speed Limits ────────────────────────────────────────────────────────
-    public static final double kMaxSpeedMetersPerSecond = 4.5; // TODO: Tune this value
-    public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI * 2.0; // TODO: Tune this value
+    public static final double kMaxSpeedMetersPerSecond = 5.12;
+    public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI * 2.0;
 
     // ─── Drive Motor Current Limits ──────────────────────────────────────────
-    public static final double kDriveStatorCurrentLimitAmps = 80.0; // TODO: Tune this value
-    public static final double kDriveSupplyCurrentLimitAmps = 40.0; // TODO: Tune this value
+    public static final double kDriveStatorCurrentLimitAmps = 120.0;
+    public static final double kDriveSupplyCurrentLimitAmps = 60.0;
 
     // ─── Steer Motor Current Limits ──────────────────────────────────────────
-    public static final double kSteerStatorCurrentLimitAmps = 40.0; // TODO: Tune this value
-    public static final double kSteerSupplyCurrentLimitAmps = 20.0; // TODO: Tune this value
+    public static final double kSteerStatorCurrentLimitAmps = 60.0;
+    public static final double kSteerSupplyCurrentLimitAmps = 40.0;
 
     // ─── Drive Motor PID Gains ───────────────────────────────────────────────
-    public static final double kDriveProportionalGain = 0.1; // TODO: Tune this value
-    public static final double kDriveIntegralGain = 0.0; // TODO: Tune this value
-    public static final double kDriveDerivativeGain = 0.0; // TODO: Tune this value
-    public static final double kDriveStaticGain = 0.0; // TODO: Tune this value
-    public static final double kDriveVelocityGain = 0.12; // TODO: Tune this value
+    public static final double kDriveProportionalGain = 0.05;
+    public static final double kDriveIntegralGain = 0.0;
+    public static final double kDriveDerivativeGain = 0.0;
+    public static final double kDriveStaticGain = 0.0;
+    public static final double kDriveVelocityGain = 0.12;
 
     // ─── Steer Motor PID Gains ───────────────────────────────────────────────
-    public static final double kSteerProportionalGain = 100.0; // TODO: Tune this value
-    public static final double kSteerIntegralGain = 0.0; // TODO: Tune this value
-    public static final double kSteerDerivativeGain = 0.5; // TODO: Tune this value
+    public static final double kSteerProportionalGain = 59.5;
+    public static final double kSteerIntegralGain = 0.0;
+    public static final double kSteerDerivativeGain = 0.075;
 
     // ─── Slip Current ────────────────────────────────────────────────────────
-    public static final double kSlipCurrentAmps = 80.0; // TODO: Tune this value
+    public static final double kSlipCurrentAmps = 120.0;
 
     // ─── Front Left Module ───────────────────────────────────────────────────
-    public static final int kFrontLeftDriveMotorId = 1; // TODO: Set to actual CAN ID
-    public static final int kFrontLeftSteerMotorId = 2; // TODO: Set to actual CAN ID
-    public static final int kFrontLeftCANcoderId = 3; // TODO: Set to actual CAN ID
-    public static final double kFrontLeftCANcoderOffsetRotations = 0.0; // TODO: Set to actual offset (rotations)
-    public static final boolean kFrontLeftDriveInverted = false; // TODO: Set based on module orientation
+    public static final int kFrontLeftDriveMotorId = 1;
+    public static final int kFrontLeftSteerMotorId = 2;
+    public static final int kFrontLeftCANcoderId = 3;
+    public static final double kFrontLeftCANcoderOffsetRotations = -0.252197265625;
+    public static final boolean kFrontLeftDriveInverted = false;
 
     // ─── Front Right Module ──────────────────────────────────────────────────
-    public static final int kFrontRightDriveMotorId = 4; // TODO: Set to actual CAN ID
-    public static final int kFrontRightSteerMotorId = 5; // TODO: Set to actual CAN ID
-    public static final int kFrontRightCANcoderId = 6; // TODO: Set to actual CAN ID
-    public static final double kFrontRightCANcoderOffsetRotations = 0.0; // TODO: Set to actual offset (rotations)
-    public static final boolean kFrontRightDriveInverted = false; // TODO: Set based on module orientation
+    public static final int kFrontRightDriveMotorId = 4;
+    public static final int kFrontRightSteerMotorId = 5;
+    public static final int kFrontRightCANcoderId = 6;
+    public static final double kFrontRightCANcoderOffsetRotations = -0.48046875;
+    public static final boolean kFrontRightDriveInverted = true;
 
     // ─── Back Left Module ────────────────────────────────────────────────────
-    public static final int kBackLeftDriveMotorId = 7; // TODO: Set to actual CAN ID
-    public static final int kBackLeftSteerMotorId = 8; // TODO: Set to actual CAN ID
-    public static final int kBackLeftCANcoderId = 9; // TODO: Set to actual CAN ID
-    public static final double kBackLeftCANcoderOffsetRotations = 0.0; // TODO: Set to actual offset (rotations)
-    public static final boolean kBackLeftDriveInverted = false; // TODO: Set based on module orientation
+    public static final int kBackLeftDriveMotorId = 7;
+    public static final int kBackLeftSteerMotorId = 8;
+    public static final int kBackLeftCANcoderId = 9;
+    public static final double kBackLeftCANcoderOffsetRotations = 0.327880859375;
+    public static final boolean kBackLeftDriveInverted = false;
 
     // ─── Back Right Module ───────────────────────────────────────────────────
-    public static final int kBackRightDriveMotorId = 13; // TODO: Set to actual CAN ID
-    public static final int kBackRightSteerMotorId = 11; // TODO: Set to actual CAN ID
-    public static final int kBackRightCANcoderId = 12; // TODO: Set to actual CAN ID
-    public static final double kBackRightCANcoderOffsetRotations = 0.0; // TODO: Set to actual offset (rotations)
-    public static final boolean kBackRightDriveInverted = false; // TODO: Set based on module orientation
+    public static final int kBackRightDriveMotorId = 10;
+    public static final int kBackRightSteerMotorId = 11;
+    public static final int kBackRightCANcoderId = 12;
+    public static final double kBackRightCANcoderOffsetRotations = -0.247314453125;
+    public static final boolean kBackRightDriveInverted = true;
   }
 
   public static final class SuperstructureConstants {
     // Arm Positions for Superstructure States
-    public static final double kStowAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
-    public static final double kIntakeGroundAngleRadians = Math.toRadians(-45.0); // TODO: Tune this value
-    public static final double kShootAngleRadians = Math.toRadians(60.0); // TODO: Tune this value
+    public static final double kStowAngleRadians = Math.toRadians(0.0);
+    public static final double kIntakeGroundAngleRadians = Units.degreesToRadians(-75.0);
+    public static final double kShootAngleRadians = Math.toRadians(60.0);
   }
 }

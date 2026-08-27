@@ -98,7 +98,7 @@ public class AutoAim {
     Translation2d targetGoal = getTargetGoalLocation();
     double deltaX = targetGoal.getX() - robotPose.getX();
     double deltaY = targetGoal.getY() - robotPose.getY();
-    return new Rotation2d(Math.atan2(deltaY, deltaX));
+    return new Rotation2d(Math.atan2(deltaY, deltaX)).plus(AutoAimConstants.kTargetAimOffset);
   }
 
   /**

@@ -80,16 +80,6 @@ public class Shooter extends SubsystemBase {
     setHoodAngle(ShooterConstants.kHoodStowAngleRadians);
   }
 
-  /** Sets hood to low goal angle. */
-  public void setHoodLowGoal() {
-    setHoodAngle(ShooterConstants.kHoodLowGoalAngleRadians);
-  }
-
-  /** Sets hood to high goal angle. */
-  public void setHoodHighGoal() {
-    setHoodAngle(ShooterConstants.kHoodHighGoalAngleRadians);
-  }
-
   /** Stops the hood motor. */
   public void stopHood() {
     m_shooterIO.stopHood();
