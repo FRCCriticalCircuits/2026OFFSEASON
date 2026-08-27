@@ -16,13 +16,14 @@ import frc.robot.subsystems.sequencer.Sequencer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.swerve.SwerveDrive;
 import frc.robot.superstructure.SuperstructureState.RollerAction;
+import frc.robot.superstructure.SuperstructureState.SequencerAction;
 import frc.robot.superstructure.SuperstructureState.ShooterAction;
 import frc.robot.util.AutoAim;
 import frc.robot.util.AutoAim.AutoAimResult;
 import java.util.function.DoubleSupplier;
 
 /**
- * The Superstructure coordinates the Sequencer, Arm, Roller, and combined Shooter (Flywheel + Hood)
+ * The Superstructure coordinates the Sequencer feeder, Arm, Roller, and combined Shooter (Flywheel + Hood)
  * subsystems using an enum-based state machine and dynamic Auto-Aim automation.
  */
 public class Superstructure extends SubsystemBase {
@@ -81,19 +82,19 @@ public class Superstructure extends SubsystemBase {
 
   /**
    * Sequential intake command:
-   * 1. Deploys arm and sequencer to ground intake position with roller stopped.
+   * 1. Deploys arm to ground intake position with roller and sequencer stopped.
    * 2. Waits until arm reaches the target angle.
    * 3. Runs the roller to intake balls while held.
    * 4. Automatically returns arm to STOW and stops the roller on release.
    */
   public Command intakeSequenceCommand() {
     return Commands.sequence(
-        // Step 1: Move arm to ground target angle while roller is stopped
+        // Step 1: Move arm to ground target angle while roller and sequencer are stopped
         Commands.runOnce(() -> {
           m_desiredState = SuperstructureState.INTAKE_GROUND;
-          m_sequencer.setGoal(SuperstructureState.INTAKE_GROUND.sequencerHeightMeters);
           m_arm.setGoal(SuperstructureState.INTAKE_GROUND.armAngleRadians);
           m_roller.stop();
+          m_sequencer.stop();
         }, this),
 
         // Step 2: Wait until arm reaches target angle
@@ -102,7 +103,7 @@ public class Superstructure extends SubsystemBase {
         // Step 3: Run roller to intake balls
         Commands.run(() -> m_roller.runIntake(), this)
     ).finallyDo(interrupted -> {
-        // Step 4: Retract arm to STOW and stop roller
+        // Step 4: Retract arm to STOW and stop roller & sequencer
         applyState(SuperstructureState.STOW);
         m_desiredState = SuperstructureState.STOW;
     }).withName("Superstructure.intakeSequence");
@@ -112,8 +113,8 @@ public class Superstructure extends SubsystemBase {
    * Dynamic Auto-Aim & Shoot Command:
    * 1. Continuously tracks distance to goal and aligns swerve heading while driver translates.
    * 2. Dynamically calculates and applies flywheel speed and hood angle from distance.
-   * 3. Once heading, flywheel speed, hood angle, and arm/sequencer are locked, feeds balls to shoot.
-   * 4. Automatically returns to STOW and stops shooter when released.
+   * 3. Once heading, flywheel speed, hood angle, and arm are locked, spins sequencer to feed balls.
+   * 4. Automatically returns to STOW and stops shooter and sequencer when released.
    *
    * @param swerve Swerve drivetrain subsystem.
    * @param xSpeedSupplier Driver X translation supplier.
@@ -142,21 +143,21 @@ public class Superstructure extends SubsystemBase {
               aimResult.flywheelVelocityRotationsPerSecond,
               aimResult.hoodAngleRadians);
 
-          // 3. Set arm and sequencer to shooting setpoints
+          // 3. Set arm to shooting setpoint
           m_arm.setGoal(SuperstructureState.SPIN_UP_SHOOT.armAngleRadians);
-          m_sequencer.setGoal(SuperstructureState.SPIN_UP_SHOOT.sequencerHeightMeters);
 
           // 4. Feed balls when on target
           boolean fullyReady =
               aimResult.headingAligned
                   && m_shooter.isReadyToShoot()
-                  && m_arm.atGoal()
-                  && m_sequencer.atGoal();
+                  && m_arm.atGoal();
 
           if (fullyReady) {
+            m_sequencer.feed();   // Spin sequencer to feed all balls into shooter
             m_roller.runIntake(); // Assist ball feed
             m_desiredState = SuperstructureState.SHOOT;
           } else {
+            m_sequencer.stop();   // Hold balls in sequencer until ready
             m_roller.runHold();
             m_desiredState = SuperstructureState.SPIN_UP_SHOOT;
           }
@@ -169,8 +170,9 @@ public class Superstructure extends SubsystemBase {
         this,
         swerve
     ).finallyDo(interrupted -> {
-        // Return to STOW and stop shooter upon trigger release
+        // Return to STOW and stop shooter & sequencer upon trigger release
         m_shooter.stop();
+        m_sequencer.stop();
         applyState(SuperstructureState.STOW);
         m_desiredState = SuperstructureState.STOW;
     }).withName("Superstructure.autoAimAndShoot");
@@ -186,13 +188,13 @@ public class Superstructure extends SubsystemBase {
     return m_currentState;
   }
 
-  /** @return true when sequencer and arm have both reached the desired state goals */
+  /** @return true when arm has reached the desired state goal */
   public boolean atDesiredState() {
-    boolean mechanismsAtGoal = m_sequencer.atGoal() && m_arm.atGoal();
+    boolean armAtGoal = m_arm.atGoal();
     if (m_desiredState == SuperstructureState.SHOOT || m_desiredState == SuperstructureState.SPIN_UP_SHOOT) {
-      return mechanismsAtGoal && m_shooter.isReadyToShoot();
+      return armAtGoal && m_shooter.isReadyToShoot();
     }
-    return mechanismsAtGoal;
+    return armAtGoal;
   }
 
   // ─── State application ─────────────────────────────────────────────────────
@@ -201,10 +203,10 @@ public class Superstructure extends SubsystemBase {
    * Applies the setpoints for a given state to all subsystems.
    */
   private void applyState(SuperstructureState targetState) {
-    m_sequencer.setGoal(targetState.sequencerHeightMeters);
     m_arm.setGoal(targetState.armAngleRadians);
     applyRollerAction(targetState.rollerAction);
     applyShooterAction(targetState.shooterAction);
+    applySequencerAction(targetState.sequencerAction);
   }
 
   private void applyRollerAction(RollerAction action) {
@@ -223,6 +225,13 @@ public class Superstructure extends SubsystemBase {
         m_shooter.stowHood();
       }
       case STOP           -> m_shooter.stop();
+    }
+  }
+
+  private void applySequencerAction(SequencerAction action) {
+    switch (action) {
+      case FEED -> m_sequencer.feed();
+      case STOP -> m_sequencer.stop();
     }
   }
 

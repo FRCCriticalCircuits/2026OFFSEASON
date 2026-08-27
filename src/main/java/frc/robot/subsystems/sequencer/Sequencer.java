@@ -4,51 +4,20 @@
 
 package frc.robot.subsystems.sequencer;
 
-import edu.wpi.first.math.controller.ElevatorFeedforward;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.SequencerConstants;
 
 /**
- * Sequencer subsystem.
- *
- * <p>All hardware I/O is delegated to a {@link SequencerIO} implementation injected
- * at construction time. The subsystem itself only contains control logic
- * (ProfiledPID + ElevatorFeedforward), making it trivially testable with any IO
- * backend (simulation, replay, or real hardware).
+ * Sequencer subsystem — single-mode spinning feeder motor controlled via kV feedforward.
  */
 public class Sequencer extends SubsystemBase {
-
-  // ─── IO layer ─────────────────────────────────────────────────────────────
-
   private final SequencerIO m_sequencerIO;
   private final SequencerIO.SequencerIOInputs m_inputs = new SequencerIO.SequencerIOInputs();
 
-  // ─── Controllers ──────────────────────────────────────────────────────────
-
-  private final ElevatorFeedforward m_feedforward =
-      new ElevatorFeedforward(
-          SequencerConstants.kStaticGain,
-          SequencerConstants.kGravityGain,
-          SequencerConstants.kVelocityGain,
-          SequencerConstants.kAccelerationGain);
-
-  private final ProfiledPIDController m_feedbackController =
-      new ProfiledPIDController(
-          SequencerConstants.kProportionalGain,
-          SequencerConstants.kIntegralGain,
-          SequencerConstants.kDerivativeGain,
-          new TrapezoidProfile.Constraints(
-              SequencerConstants.kMaxVelocityMetersPerSecond,
-              SequencerConstants.kMaxAccelerationMetersPerSecondSquared));
-
-  // ─── State ────────────────────────────────────────────────────────────────
-
-  private double m_goalHeightMeters = 0.0;
-
-  // ─── Constructor ──────────────────────────────────────────────────────────
+  private double m_targetVelocityRotationsPerSecond = 0.0;
 
   /**
    * Creates a new Sequencer subsystem backed by the provided IO implementation.
@@ -57,61 +26,80 @@ public class Sequencer extends SubsystemBase {
    */
   public Sequencer(SequencerIO sequencerIO) {
     m_sequencerIO = sequencerIO;
-    m_feedbackController.setTolerance(SequencerConstants.kToleranceMeters);
   }
 
-  // ─── Public API ────────────────────────────────────────────────────────────
+  // ─── Feed Control ──────────────────────────────────────────────────────────
+
+  /** Spins the sequencer forward to feed all balls into the shooter using kV feedforward. */
+  public void feed() {
+    setVelocity(SequencerConstants.kFeedVelocityRotationsPerSecond);
+  }
 
   /**
-   * Sets the desired height goal for the sequencer.
+   * Sets closed-loop target velocity in rotations per second using kV feedforward.
    *
-   * @param targetHeightMeters target height in meters
+   * @param velocityRotationsPerSecond target velocity
    */
-  public void setGoal(double targetHeightMeters) {
-    m_goalHeightMeters = targetHeightMeters;
-    m_feedbackController.setGoal(targetHeightMeters);
+  public void setVelocity(double velocityRotationsPerSecond) {
+    m_targetVelocityRotationsPerSecond = velocityRotationsPerSecond;
+    m_sequencerIO.setVelocity(velocityRotationsPerSecond);
   }
 
-  /** @return true when the sequencer is at the goal height within tolerance */
-  public boolean atGoal() {
-    return m_feedbackController.atGoal();
+  /** Stops the sequencer motor. */
+  public void stop() {
+    m_targetVelocityRotationsPerSecond = 0.0;
+    m_sequencerIO.stop();
   }
 
-  /** @return current sequencer height in meters (sourced from IO inputs) */
-  public double getHeightMeters() {
-    return m_inputs.heightMeters;
+  /** Sets raw voltage to the sequencer motor. */
+  public void setVoltage(double appliedVolts) {
+    m_targetVelocityRotationsPerSecond = 0.0;
+    m_sequencerIO.setVoltage(appliedVolts);
+  }
+
+  // ─── Status & Getters ──────────────────────────────────────────────────────
+
+  /** @return current sequencer velocity in rotations per second */
+  public double getVelocityRotationsPerSecond() {
+    return m_inputs.velocityRotationsPerSecond;
+  }
+
+  /** @return target sequencer velocity in rotations per second */
+  public double getTargetVelocityRotationsPerSecond() {
+    return m_targetVelocityRotationsPerSecond;
+  }
+
+  /** @return true if the sequencer is at target feeding velocity within tolerance */
+  public boolean isAtTargetSpeed() {
+    if (m_targetVelocityRotationsPerSecond <= 0.0) {
+      return false;
+    }
+    return Math.abs(m_inputs.velocityRotationsPerSecond - m_targetVelocityRotationsPerSecond)
+        <= SequencerConstants.kToleranceRotationsPerSecond;
+  }
+
+  // ─── Command Factories ─────────────────────────────────────────────────────
+
+  /** @return command that continuously feeds balls */
+  public Command feedCommand() {
+    return Commands.startEnd(this::feed, this::stop, this).withName("Sequencer.feed");
+  }
+
+  /** @return command that stops the sequencer */
+  public Command stopCommand() {
+    return Commands.runOnce(this::stop, this).withName("Sequencer.stop");
   }
 
   // ─── Periodic ──────────────────────────────────────────────────────────────
 
   @Override
   public void periodic() {
-    // 1. Refresh sensor snapshot from hardware / sim
     m_sequencerIO.updateInputs(m_inputs);
 
-    // 2. Auto-zero when the lower limit switch is tripped
-    if (m_inputs.lowerLimitSwitchTripped) {
-      m_feedbackController.reset(0.0);
-      m_sequencerIO.resetEncoder();
-    }
-
-    // 3. Calculate control output
-    double feedbackOutputVolts = m_feedbackController.calculate(m_inputs.heightMeters);
-    double feedforwardOutputVolts =
-        m_feedforward.calculate(m_feedbackController.getSetpoint().velocity);
-    double totalAppliedVolts = feedbackOutputVolts + feedforwardOutputVolts;
-
-    // 4. Send voltage command to hardware / sim
-    m_sequencerIO.setVoltage(totalAppliedVolts);
-
-    // 5. Telemetry
-    SmartDashboard.putNumber("Sequencer/Height (m)", m_inputs.heightMeters);
-    SmartDashboard.putNumber("Sequencer/Velocity (m per sec)", m_inputs.velocityMetersPerSecond);
-    SmartDashboard.putNumber("Sequencer/Goal (m)", m_goalHeightMeters);
-    SmartDashboard.putNumber("Sequencer/Applied Output (V)", totalAppliedVolts);
+    SmartDashboard.putNumber("Sequencer/Velocity (RPS)", m_inputs.velocityRotationsPerSecond);
+    SmartDashboard.putNumber("Sequencer/Target Velocity (RPS)", m_targetVelocityRotationsPerSecond);
+    SmartDashboard.putNumber("Sequencer/Applied Output (V)", m_inputs.appliedVolts);
     SmartDashboard.putNumber("Sequencer/Current (A)", m_inputs.currentAmps);
-    SmartDashboard.putBoolean("Sequencer/At Goal", atGoal());
-    SmartDashboard.putBoolean("Sequencer/Lower Limit Switch", m_inputs.lowerLimitSwitchTripped);
-    SmartDashboard.putBoolean("Sequencer/Upper Limit Switch", m_inputs.upperLimitSwitchTripped);
+    SmartDashboard.putBoolean("Sequencer/At Target Speed", isAtTargetSpeed());
   }
 }

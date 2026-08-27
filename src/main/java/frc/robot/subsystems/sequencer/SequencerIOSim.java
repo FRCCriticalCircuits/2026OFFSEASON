@@ -4,64 +4,66 @@
 
 package frc.robot.subsystems.sequencer;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.wpilibj.simulation.ElevatorSim;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import frc.robot.Constants.SequencerConstants;
 
 /**
- * WPILib simulation implementation of {@link SequencerIO}.
- *
- * <p>Uses {@link ElevatorSim} to model the sequencer dynamics in simulation.
+ * WPILib simulation implementation of {@link SequencerIO} using {@link FlywheelSim}.
  */
 public class SequencerIOSim implements SequencerIO {
-
-  // ─── Simulation plant ──────────────────────────────────────────────────────
-
-  private final ElevatorSim m_sequencerSimulation =
-      new ElevatorSim(
-          DCMotor.getKrakenX60(2), // two Kraken X60 motors driving the sequencer
-          SequencerConstants.kGearRatio,
-          SequencerConstants.kCarriageMassKilograms,
-          SequencerConstants.kDrumRadiusMeters,
-          SequencerConstants.kMinHeightMeters,
-          SequencerConstants.kMaxHeightMeters,
-          true, // simulate gravity
-          0.0 // starting height (meters)
-          );
-
-  // ─── Applied output tracking ───────────────────────────────────────────────
+  private final FlywheelSim m_sequencerSimulation =
+      new FlywheelSim(
+          LinearSystemId.createFlywheelSystem(
+              DCMotor.getKrakenX60(1), 0.001, SequencerConstants.kGearRatio),
+          DCMotor.getKrakenX60(1));
 
   private double m_appliedVolts = 0.0;
-
-  // ─── SequencerIO ───────────────────────────────────────────────────────────
+  private double m_targetVelocityRotationsPerSecond = 0.0;
+  private boolean m_velocityControl = false;
 
   @Override
   public void updateInputs(SequencerIOInputs inputs) {
-    // Advance the simulation by one 20 ms robot loop
-    m_sequencerSimulation.setInput(m_appliedVolts);
+    if (m_velocityControl) {
+      // Simulate feedforward kV voltage
+      m_appliedVolts =
+          MathUtil.clamp(
+              m_targetVelocityRotationsPerSecond * SequencerConstants.kVelocityGain
+                  + Math.signum(m_targetVelocityRotationsPerSecond) * SequencerConstants.kStaticGain,
+              -12.0,
+              12.0);
+    }
+
+    m_sequencerSimulation.setInputVoltage(m_appliedVolts);
     m_sequencerSimulation.update(0.020);
 
-    inputs.heightMeters            = m_sequencerSimulation.getPositionMeters();
-    inputs.velocityMetersPerSecond = m_sequencerSimulation.getVelocityMetersPerSecond();
-    inputs.appliedVolts            = m_appliedVolts;
-    inputs.currentAmps             = m_sequencerSimulation.getCurrentDrawAmps();
-    inputs.lowerLimitSwitchTripped = m_sequencerSimulation.hasHitLowerLimit();
-    inputs.upperLimitSwitchTripped = m_sequencerSimulation.hasHitUpperLimit();
+    inputs.velocityRotationsPerSecond =
+        m_sequencerSimulation.getAngularVelocityRadPerSec() / (2.0 * Math.PI);
+    inputs.positionRotations += inputs.velocityRotationsPerSecond * 0.020;
+    inputs.appliedVolts = m_appliedVolts;
+    inputs.currentAmps = m_sequencerSimulation.getCurrentDrawAmps();
+  }
+
+  @Override
+  public void setVelocity(double velocityRotationsPerSecond) {
+    m_velocityControl = true;
+    m_targetVelocityRotationsPerSecond = velocityRotationsPerSecond;
   }
 
   @Override
   public void setVoltage(double appliedVolts) {
-    // Clamp to typical 12-V battery
-    m_appliedVolts = Math.max(-12.0, Math.min(12.0, appliedVolts));
+    m_velocityControl = false;
+    m_appliedVolts = MathUtil.clamp(appliedVolts, -12.0, 12.0);
   }
 
   @Override
-  public void resetEncoder() {
-    // Limit-switch behavior handles auto-zeroing in this sim implementation.
+  public void stop() {
+    m_velocityControl = false;
+    m_appliedVolts = 0.0;
   }
 
   @Override
-  public void setBrakeMode(boolean enableBrakeMode) {
-    // Hardware-only concept
-  }
+  public void setBrakeMode(boolean enableBrakeMode) {}
 }

@@ -74,34 +74,20 @@ public final class Constants {
     public static final int kMotorId = 20; // TODO: Set to actual CAN ID
 
     // Physical Constants
-    public static final double kGearRatio = 10.0; // TODO: Tune this value
-    public static final double kDrumRadiusMeters = 0.025; // TODO: Tune this value
-    public static final double kCarriageMassKilograms = 5.0; // TODO: Tune this value
-    public static final double kMinHeightMeters = 0.0; // TODO: Tune this value
-    public static final double kMaxHeightMeters = 1.3; // TODO: Tune this value
+    public static final double kGearRatio = 1.0; // TODO: Tune this value
 
     // Kraken X60 Current Limits
     public static final double kStatorCurrentLimitAmps = 80.0; // TODO: Tune this value
     public static final double kSupplyCurrentLimitAmps = 40.0; // TODO: Tune this value
 
-    // Control Gains (PID + Feedforward) — used by WPILib ProfiledPIDController & ElevatorFeedforward
-    public static final double kProportionalGain = 0.0; // TODO: Tune this value
-    public static final double kIntegralGain = 0.0; // TODO: Tune this value
-    public static final double kDerivativeGain = 0.0; // TODO: Tune this value
-    public static final double kStaticGain = 0.0; // TODO: Tune this value
-    public static final double kGravityGain = 0.0; // TODO: Tune this value — gravity compensation (volts)
-    public static final double kVelocityGain = 0.0; // TODO: Tune this value
-    public static final double kAccelerationGain = 0.0; // TODO: Tune this value
+    // Velocity Feedforward Control Gain (kV) & Feedback
+    public static final double kVelocityGain = 0.12; // TODO: Tune this value (volts per RPS)
+    public static final double kStaticGain = 0.25;   // TODO: Tune this value (volts)
+    public static final double kProportionalGain = 0.1; // TODO: Tune this value
 
-    // Profile Constraints
-    public static final double kMaxVelocityMetersPerSecond = 1.0; // TODO: Tune this value
-    public static final double kMaxAccelerationMetersPerSecondSquared = 2.0; // TODO: Tune this value
-    public static final double kToleranceMeters = 0.01; // TODO: Tune this value
-
-    // Feed / Indexing Operating Voltages
-    public static final double kFeedToShooterAppliedVolts = 10.0; // TODO: Tune this value
-    public static final double kIndexBallsAppliedVolts = 6.0; // TODO: Tune this value
-    public static final double kReverseFeedAppliedVolts = -6.0; // TODO: Tune this value
+    // Operating Setpoint (Rotations per second)
+    public static final double kFeedVelocityRotationsPerSecond = 50.0; // ~3000 RPM feed speed // TODO: Tune this value
+    public static final double kToleranceRotationsPerSecond = 2.5; // TODO: Tune this value
   }
 
   public static final class ShooterConstants {
@@ -244,10 +230,5 @@ public final class Constants {
     public static final double kStowAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
     public static final double kIntakeGroundAngleRadians = Math.toRadians(-45.0); // TODO: Tune this value
     public static final double kShootAngleRadians = Math.toRadians(60.0); // TODO: Tune this value
-
-    // Sequencer Positions for Superstructure States
-    public static final double kStowHeightMeters = 0.00; // TODO: Tune this value
-    public static final double kIntakeGroundHeightMeters = 0.10; // TODO: Tune this value
-    public static final double kShootHeightMeters = 0.80; // TODO: Tune this value
   }
 }

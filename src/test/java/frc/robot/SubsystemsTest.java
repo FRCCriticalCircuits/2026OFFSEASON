@@ -54,9 +54,13 @@ public class SubsystemsTest {
   }
 
   @Test
-  public void testSequencerGoalSetting() {
+  public void testSequencerFeedControl() {
     Sequencer sequencer = new Sequencer(new SequencerIOSim());
-    sequencer.setGoal(0.5);
+    sequencer.feed();
+    assertEquals(50.0, sequencer.getTargetVelocityRotationsPerSecond());
+    sequencer.periodic();
+    sequencer.stop();
+    assertEquals(0.0, sequencer.getTargetVelocityRotationsPerSecond());
     sequencer.periodic();
     assertNotNull(sequencer);
   }

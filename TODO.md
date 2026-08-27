@@ -135,34 +135,28 @@ Point all module bevel gears in the same direction (e.g. facing left or right), 
 
 ---
 
-## 4. Sequencer Mechanism Tuning
+## 4. Sequencer Mechanism Tuning (Spinning Feeder)
 
 ### Physical Properties & Limits
 | Variable | Default Value | Unit | Description |
 |---|---|---|---|
-| `kGearRatio` | `10.0` | ratio | Total gear reduction between motor and lift drum/spool. |
-| `kDrumRadiusMeters` | `0.025` ($2.5\text{ cm}$) | meters | Radius of the drum or pitch radius of the pulley/sprocket. |
-| `kCarriageMassKilograms` | `5.0` | kg | Mass of the moving stage. |
-| `kMinHeightMeters` | `0.0` | meters | Bottom hard-stop height. |
-| `kMaxHeightMeters` | `1.3` | meters | Top maximum extension height. |
+| `kGearRatio` | `1.0` | ratio | Total gear reduction between Kraken motor and sequencer feeder rollers/belts. |
+| `kStatorCurrentLimitAmps` | `80.0` | amps | Peak stator current limit. |
+| `kSupplyCurrentLimitAmps` | `40.0` | amps | Continuous battery protection limit. |
 
-- [ ] Set exact drum radius and gear ratio for accurate linear meter conversion.
-- [ ] Confirm bottom limit switch resets encoder to $0.0\text{ m}$.
+- [ ] Set exact mechanical gear ratio for the sequencer feeder.
 
-### Control Gains & Feed Voltages
-| Variable | Default Value | Description |
+### Control Gains (Velocity Feedforward with kV)
+| Variable | Default Value | Description / Tuning Procedure |
 |---|---|---|
-| `kGravityGain` ($kG$) | `0.0` | Voltage to counteract gravity on carriage. |
-| `kProportionalGain` ($kP$) | `0.0` | Height position feedback gain. |
-| `kDerivativeGain` ($kD$) | `0.0` | Height position damping gain. |
-| `kMaxVelocityMetersPerSecond` | `1.0` | Max carriage lift speed. |
-| `kMaxAccelerationMetersPerSecondSquared` | `2.0` | Max carriage acceleration. |
-| `kFeedToShooterAppliedVolts` | `10.0` | Voltage applied when feeding balls into the spinning flywheel. |
-| `kIndexBallsAppliedVolts` | `6.0` | Voltage applied when indexing balls from the intake. |
-| `kReverseFeedAppliedVolts` | `-6.0` | Voltage applied when clearing jams / outtaking. |
+| `kVelocityGain` ($kV$) | `0.12` | Volts per RPS feedforward gain ($12\text{ V} / \text{Max RPS}$). |
+| `kStaticGain` ($kS$) | `0.25` | Friction compensation voltage to start spinning. |
+| `kProportionalGain` ($kP$) | `0.1` | Velocity closed-loop feedback gain on TalonFX Slot 0. |
+| `kFeedVelocityRotationsPerSecond` | `50.0` | Target feed velocity ($\approx 3000\text{ RPM}$) to push balls into shooter. |
+| `kToleranceRotationsPerSecond` | `2.5` | Velocity tolerance window. |
 
-- [ ] Tune $kG$ and $kP$ for accurate height holding.
-- [ ] Calibrate `kFeedToShooterAppliedVolts` to ensure consistent ball transfer without jamming.
+- [ ] Calculate initial $kV$: $\frac{12.0\text{ V}}{\text{Free Speed RPS}} \approx 0.12$.
+- [ ] Calibrate `kFeedVelocityRotationsPerSecond` to deliver rapid, jam-free ball transfer into the flywheel.
 
 ---
 

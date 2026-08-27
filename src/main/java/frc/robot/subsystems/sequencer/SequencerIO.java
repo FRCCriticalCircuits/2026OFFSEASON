@@ -10,12 +10,6 @@ package frc.robot.subsystems.sequencer;
  * <p>All hardware interaction is routed through this interface so that the
  * {@link Sequencer} subsystem logic is fully decoupled from any specific motor
  * controller, encoder, or simulation backend.
- *
- * <p>Implementations:
- * <ul>
- *   <li>{@link SequencerIOSim}     — WPILib simulation
- *   <li>{@link SequencerIOKraken}  — real CTRE Kraken X60 (TalonFX) hardware
- * </ul>
  */
 public interface SequencerIO {
 
@@ -23,57 +17,45 @@ public interface SequencerIO {
 
   /**
    * Holds a snapshot of all sensor readings from the sequencer hardware.
-   * The subsystem calls {@link SequencerIO#updateInputs(SequencerIOInputs)} once
-   * per periodic loop to refresh this struct.
    */
   class SequencerIOInputs {
-    /** Current sequencer height in meters (0 = fully retracted). */
-    public double heightMeters = 0.0;
+    /** Current sequencer rotational velocity in rotations per second. */
+    public double velocityRotationsPerSecond = 0.0;
 
-    /** Current sequencer velocity in meters per second. */
-    public double velocityMetersPerSecond = 0.0;
+    /** Current accumulated position in rotations. */
+    public double positionRotations = 0.0;
 
-    /** Applied voltage to the sequencer motor(s) (volts). */
+    /** Applied voltage to the sequencer motor (volts). */
     public double appliedVolts = 0.0;
 
-    /** Supply current drawn by the sequencer motor(s) (amps). */
+    /** Current drawn by the sequencer motor (amps). */
     public double currentAmps = 0.0;
-
-    /** Whether the sequencer bottom (lower) limit switch is tripped. */
-    public boolean lowerLimitSwitchTripped = false;
-
-    /** Whether the sequencer top (upper) limit switch is tripped. */
-    public boolean upperLimitSwitchTripped = false;
   }
 
   // ─── Default no-op implementations ────────────────────────────────────────
-  // Allows partial implementations; unused methods don't need to be overridden.
 
-  /**
-   * Refreshes {@code inputs} with the latest hardware readings.
-   *
-   * <p>Must be called once per periodic loop <em>before</em> any control
-   * output is calculated.
-   *
-   * @param inputs the struct to update in-place
-   */
+  /** Refreshes {@code inputs} with the latest hardware readings. */
   default void updateInputs(SequencerIOInputs inputs) {}
 
   /**
-   * Commands the sequencer motor(s) to output the given voltage.
+   * Commands the sequencer motor to a target velocity using kV feedforward.
    *
-   * @param appliedVolts voltage to apply (positive = upward)
+   * @param velocityRotationsPerSecond target speed in rotations per second
+   */
+  default void setVelocity(double velocityRotationsPerSecond) {}
+
+  /**
+   * Commands the sequencer motor to output the given voltage.
+   *
+   * @param appliedVolts voltage to apply
    */
   default void setVoltage(double appliedVolts) {}
 
-  /**
-   * Zeros the sequencer encoder at the current mechanical position.
-   * Call this when the sequencer is confirmed to be at the bottom hard-stop.
-   */
-  default void resetEncoder() {}
+  /** Stops the sequencer motor. */
+  default void stop() {}
 
   /**
-   * Configures the brake/coast idle mode of the sequencer motor(s).
+   * Configures the brake/coast idle mode of the sequencer motor.
    *
    * @param enableBrakeMode {@code true} = brake mode, {@code false} = coast mode
    */

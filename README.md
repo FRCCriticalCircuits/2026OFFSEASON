@@ -162,11 +162,10 @@ When holding the **Right Trigger**:
 - **Control**: Open-loop voltage control (`runIntake()`, `runOuttake()`, `runHold()`, `stop()`).
 - **Role**: Pulls balls into the robot from the floor or feeding station.
 
-### 4. Sequencer
+### 4. Sequencer (Feeder)
 - **Hardware**: Kraken X60 (TalonFX) on CANivore.
-- **Control**: WPILib `ProfiledPIDController` + `ElevatorFeedforward` with trapezoidal motion profiling and gravity compensation.
-- **Auto-Zeroing**: Auto-zeros position when the lower limit switch is tripped.
-- **Role**: Indexes and feeds balls from intake to shooter.
+- **Control**: Single-mode velocity feedforward control using $kV$ (`VelocityVoltage(EnableFOC = true)` / `kV * targetRPS`).
+- **Role**: Continuously spins forward to feed all staged balls directly into the shooter flywheel and hood.
 
 ### 5. Shooter (Flywheel + Adjustable Hood)
 - **Hardware**:
@@ -180,12 +179,12 @@ When holding the **Right Trigger**:
 ### 6. Superstructure State Machine
 Coordinates all mechanisms into synchronized presets:
 
-| State | Sequencer Height | Arm Angle | Roller Action | Shooter Action (Flywheel + Hood) |
+| State | Arm Angle | Roller Action | Shooter Action (Flywheel + Hood) | Sequencer Action |
 |---|---|---|---|---|
-| **`STOW`** | $0.00\text{ m}$ | $0^\circ$ | `STOP` | Flywheel `STOP`, Hood $0^\circ$ |
-| **`INTAKE_GROUND`** | $0.10\text{ m}$ | $-45^\circ$ | `INTAKE` | Flywheel `IDLE`, Hood $0^\circ$ |
-| **`SPIN_UP_SHOOT`** | $0.80\text{ m}$ | $+60^\circ$ | `HOLD` | Flywheel Spooling, Hood Positioning |
-| **`SHOOT`** | $0.80\text{ m}$ | $+60^\circ$ | `INTAKE` (feed) | Flywheel At Speed, Hood At Angle |
+| **`STOW`** | $0^\circ$ | `STOP` | Flywheel `STOP`, Hood $0^\circ$ | `STOP` |
+| **`INTAKE_GROUND`** | $-45^\circ$ | `INTAKE` | Flywheel `IDLE`, Hood $0^\circ$ | `STOP` |
+| **`SPIN_UP_SHOOT`** | $+60^\circ$ | `HOLD` | Flywheel Spooling, Hood Positioning | `STOP` |
+| **`SHOOT`** | $+60^\circ$ | `INTAKE` (feed) | Flywheel At Speed, Hood At Angle | **`FEED`** |
 
 ---
 

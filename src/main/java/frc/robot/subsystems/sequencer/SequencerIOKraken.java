@@ -5,7 +5,9 @@
 package frc.robot.subsystems.sequencer;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -15,10 +17,11 @@ import frc.robot.Constants;
 import frc.robot.Constants.SequencerConstants;
 
 /**
- * Hardware IO implementation for the sequencer subsystem using a Kraken X60 (TalonFX) motor.
+ * Hardware IO implementation for the sequencer feeder using a Kraken X60 (TalonFX) motor.
  */
 public class SequencerIOKraken implements SequencerIO {
   private final TalonFX m_motor;
+  private final VelocityVoltage m_velocityVoltage = new VelocityVoltage(0.0).withEnableFOC(true);
   private final VoltageOut m_voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
   /**
@@ -40,34 +43,29 @@ public class SequencerIOKraken implements SequencerIO {
         SequencerConstants.kSupplyCurrentLimitAmps; // TODO: Tune this value
     configuration.CurrentLimits.SupplyCurrentLimitEnable = true;
 
+    // Slot 0 velocity control gains (kV Feedforward + Feedback)
+    Slot0Configs slot0 = configuration.Slot0;
+    slot0.kV = SequencerConstants.kVelocityGain; // Primary feedforward gain
+    slot0.kS = SequencerConstants.kStaticGain;
+    slot0.kP = SequencerConstants.kProportionalGain;
+
     m_motor.getConfigurator().apply(configuration);
   }
 
   @Override
   public void updateInputs(SequencerIOInputs inputs) {
-    // Read position: rotations -> meters (position / gearRatio * 2π * drumRadius)
-    double positionRotations = m_motor.getPosition().getValueAsDouble();
-    inputs.heightMeters =
-        (positionRotations / SequencerConstants.kGearRatio)
-            * 2.0
-            * Math.PI
-            * SequencerConstants.kDrumRadiusMeters;
-
-    // Read velocity: rotations/s -> m/s (velocity / gearRatio * 2π * drumRadius)
-    double velocityRotationsPerSecond = m_motor.getVelocity().getValueAsDouble();
-    inputs.velocityMetersPerSecond =
-        (velocityRotationsPerSecond / SequencerConstants.kGearRatio)
-            * 2.0
-            * Math.PI
-            * SequencerConstants.kDrumRadiusMeters;
-
-    // Applied voltage and stator current
+    inputs.positionRotations =
+        m_motor.getPosition().getValueAsDouble() / SequencerConstants.kGearRatio;
+    inputs.velocityRotationsPerSecond =
+        m_motor.getVelocity().getValueAsDouble() / SequencerConstants.kGearRatio;
     inputs.appliedVolts = m_motor.getMotorVoltage().getValueAsDouble();
     inputs.currentAmps = m_motor.getStatorCurrent().getValueAsDouble();
+  }
 
-    // Limit switches: false
-    inputs.lowerLimitSwitchTripped = false;
-    inputs.upperLimitSwitchTripped = false;
+  @Override
+  public void setVelocity(double velocityRotationsPerSecond) {
+    m_motor.setControl(
+        m_velocityVoltage.withVelocity(velocityRotationsPerSecond * SequencerConstants.kGearRatio));
   }
 
   @Override
@@ -77,8 +75,8 @@ public class SequencerIOKraken implements SequencerIO {
   }
 
   @Override
-  public void resetEncoder() {
-    m_motor.setPosition(0.0);
+  public void stop() {
+    setVoltage(0.0);
   }
 
   @Override

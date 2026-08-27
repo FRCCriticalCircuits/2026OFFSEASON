@@ -9,35 +9,35 @@ import frc.robot.Constants.SuperstructureConstants;
 /**
  * Defines every named state the superstructure can be in.
  *
- * <p>Each state carries the target positions for the sequencer (meters) and
- * arm (radians), along with the desired actions for the roller and shooter.
+ * <p>Each state carries the target position for the arm (radians), along with
+ * the desired actions for the roller, shooter, and sequencer feeder.
  */
 public enum SuperstructureState {
 
-  // ─── State             Sequencer (m)                                 Arm (rad)                                    RollerAction          ShooterAction ─────
-  STOW               (SuperstructureConstants.kStowHeightMeters,          SuperstructureConstants.kStowAngleRadians,          RollerAction.STOP,    ShooterAction.STOP),
-  INTAKE_GROUND      (SuperstructureConstants.kIntakeGroundHeightMeters,  SuperstructureConstants.kIntakeGroundAngleRadians,  RollerAction.INTAKE,  ShooterAction.IDLE),
-  SPIN_UP_SHOOT      (SuperstructureConstants.kShootHeightMeters,         SuperstructureConstants.kShootAngleRadians,         RollerAction.HOLD,    ShooterAction.SPIN_UP),
-  SHOOT              (SuperstructureConstants.kShootHeightMeters,         SuperstructureConstants.kShootAngleRadians,         RollerAction.INTAKE,  ShooterAction.SHOOT);
+  // ─── State             Arm (rad)                                    RollerAction          ShooterAction          SequencerAction ─────
+  STOW               (SuperstructureConstants.kStowAngleRadians,          RollerAction.STOP,    ShooterAction.STOP,    SequencerAction.STOP),
+  INTAKE_GROUND      (SuperstructureConstants.kIntakeGroundAngleRadians,  RollerAction.INTAKE,  ShooterAction.IDLE,    SequencerAction.STOP),
+  SPIN_UP_SHOOT      (SuperstructureConstants.kShootAngleRadians,         RollerAction.HOLD,    ShooterAction.SPIN_UP, SequencerAction.STOP),
+  SHOOT              (SuperstructureConstants.kShootAngleRadians,         RollerAction.INTAKE,  ShooterAction.SHOOT,   SequencerAction.FEED);
 
   // ─── Fields ────────────────────────────────────────────────────────────────
 
-  public final double sequencerHeightMeters;
   public final double armAngleRadians;
   public final RollerAction rollerAction;
   public final ShooterAction shooterAction;
+  public final SequencerAction sequencerAction;
 
   // ─── Constructor ───────────────────────────────────────────────────────────
 
   SuperstructureState(
-      double sequencerHeightMeters,
       double armAngleRadians,
       RollerAction rollerAction,
-      ShooterAction shooterAction) {
-    this.sequencerHeightMeters = sequencerHeightMeters;
-    this.armAngleRadians       = armAngleRadians;
-    this.rollerAction          = rollerAction;
-    this.shooterAction         = shooterAction;
+      ShooterAction shooterAction,
+      SequencerAction sequencerAction) {
+    this.armAngleRadians   = armAngleRadians;
+    this.rollerAction      = rollerAction;
+    this.shooterAction     = shooterAction;
+    this.sequencerAction   = sequencerAction;
   }
 
   // ─── Action Enums ──────────────────────────────────────────────────────────
@@ -55,5 +55,11 @@ public enum SuperstructureState {
     IDLE,
     SPIN_UP,
     SHOOT
+  }
+
+  /** Desired action for the sequencer feeder motor. */
+  public enum SequencerAction {
+    STOP,
+    FEED
   }
 }
