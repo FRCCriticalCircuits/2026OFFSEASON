@@ -16,9 +16,8 @@ public final class Constants {
   /** CAN bus name for all CTRE devices (CANivore). */
   public static final String kCANBusName = "canivore";
 
-  public static final class OperatorConstants {
+  public static final class DriverConstants {
     public static final int kDriverControllerPort = 0;
-    public static final int kOperatorControllerPort = 1;
   }
 
   public static final class ArmConstants {
@@ -51,6 +50,23 @@ public final class Constants {
     public static final double kToleranceRadians = Math.toRadians(2.0); // TODO: Tune this value
   }
 
+  public static final class RollerConstants {
+    // CAN ID
+    public static final int kMotorId = 30; // TODO: Set to actual CAN ID
+
+    // Physical Constants
+    public static final double kGearRatio = 3.0; // TODO: Tune this value
+
+    // Kraken X60 Current Limits
+    public static final double kStatorCurrentLimitAmps = 60.0; // TODO: Tune this value
+    public static final double kSupplyCurrentLimitAmps = 40.0; // TODO: Tune this value
+
+    // Applied Voltages for Roller Actions
+    public static final double kIntakeAppliedVolts = 10.0; // TODO: Tune this value
+    public static final double kOuttakeAppliedVolts = -8.0; // TODO: Tune this value
+    public static final double kHoldAppliedVolts = 2.0; // TODO: Tune this value
+  }
+
   public static final class SequencerConstants {
     // CAN ID
     public static final int kMotorId = 20; // TODO: Set to actual CAN ID
@@ -79,6 +95,55 @@ public final class Constants {
     public static final double kMaxVelocityMetersPerSecond = 1.0; // TODO: Tune this value
     public static final double kMaxAccelerationMetersPerSecondSquared = 2.0; // TODO: Tune this value
     public static final double kToleranceMeters = 0.01; // TODO: Tune this value
+
+    // Feed / Indexing Operating Voltages
+    public static final double kFeedToShooterAppliedVolts = 10.0; // TODO: Tune this value
+    public static final double kIndexBallsAppliedVolts = 6.0; // TODO: Tune this value
+    public static final double kReverseFeedAppliedVolts = -6.0; // TODO: Tune this value
+  }
+
+  public static final class ShooterConstants {
+    // ─── Flywheel Motors (Dual Kraken X60) ───────────────────────────────────
+    public static final int kFlywheelLeaderMotorId = 40; // TODO: Set to actual CAN ID
+    public static final int kFlywheelFollowerMotorId = 41; // TODO: Set to actual CAN ID
+    public static final double kFlywheelGearRatio = 1.0; // TODO: Tune this value
+
+    public static final double kFlywheelStatorCurrentLimitAmps = 80.0; // TODO: Tune this value
+    public static final double kFlywheelSupplyCurrentLimitAmps = 40.0; // TODO: Tune this value
+
+    // Flywheel Velocity Closed-Loop PID & Feedforward Gains (Slot 0 on TalonFX)
+    public static final double kFlywheelProportionalGain = 0.12; // TODO: Tune this value
+    public static final double kFlywheelIntegralGain = 0.0; // TODO: Tune this value
+    public static final double kFlywheelDerivativeGain = 0.0; // TODO: Tune this value
+    public static final double kFlywheelStaticGain = 0.25; // TODO: Tune this value
+    public static final double kFlywheelVelocityGain = 0.12; // TODO: Tune this value
+    public static final double kFlywheelAccelerationGain = 0.01; // TODO: Tune this value
+
+    // Flywheel Target Velocity Setpoints (rotations per second)
+    public static final double kFlywheelTargetVelocityRotationsPerSecond = 70.0; // ~4200 RPM // TODO: Tune this value
+    public static final double kFlywheelIdleVelocityRotationsPerSecond = 20.0; // ~1200 RPM idle spool // TODO: Tune this value
+    public static final double kFlywheelToleranceRotationsPerSecond = 2.5; // TODO: Tune this value
+
+    // ─── Hood Motor (Kraken X60) ─────────────────────────────────────────────
+    public static final int kHoodMotorId = 42; // TODO: Set to actual CAN ID
+    public static final double kHoodGearRatio = 50.0; // TODO: Tune this value
+
+    public static final double kHoodMinAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
+    public static final double kHoodMaxAngleRadians = Math.toRadians(45.0); // TODO: Tune this value
+
+    public static final double kHoodStatorCurrentLimitAmps = 40.0; // TODO: Tune this value
+    public static final double kHoodSupplyCurrentLimitAmps = 20.0; // TODO: Tune this value
+
+    // Hood Position Closed-Loop PID Gains (Slot 0 on TalonFX)
+    public static final double kHoodProportionalGain = 50.0; // TODO: Tune this value
+    public static final double kHoodIntegralGain = 0.0; // TODO: Tune this value
+    public static final double kHoodDerivativeGain = 0.5; // TODO: Tune this value
+    public static final double kHoodToleranceRadians = Math.toRadians(1.0); // TODO: Tune this value
+
+    // Hood Angle Preset Targets
+    public static final double kHoodStowAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
+    public static final double kHoodLowGoalAngleRadians = Math.toRadians(15.0); // TODO: Tune this value
+    public static final double kHoodHighGoalAngleRadians = Math.toRadians(35.0); // TODO: Tune this value
   }
 
   public static final class SwerveConstants {
@@ -146,7 +211,7 @@ public final class Constants {
     public static final boolean kBackLeftDriveInverted = false; // TODO: Set based on module orientation
 
     // ─── Back Right Module ───────────────────────────────────────────────────
-    public static final int kBackRightDriveMotorId = 10; // TODO: Set to actual CAN ID
+    public static final int kBackRightDriveMotorId = 13; // TODO: Set to actual CAN ID
     public static final int kBackRightSteerMotorId = 11; // TODO: Set to actual CAN ID
     public static final int kBackRightCANcoderId = 12; // TODO: Set to actual CAN ID
     public static final double kBackRightCANcoderOffsetRotations = 0.0; // TODO: Set to actual offset (rotations)
@@ -154,25 +219,22 @@ public final class Constants {
   }
 
   public static final class SuperstructureConstants {
-    public static final double kStowHeightMeters = 0.00; // TODO: Tune this value
+    // Arm Positions for Superstructure States
     public static final double kStowAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
-
-    public static final double kIntakeGroundHeightMeters = 0.10; // TODO: Tune this value
     public static final double kIntakeGroundAngleRadians = Math.toRadians(-45.0); // TODO: Tune this value
-
-    public static final double kIntakeSourceHeightMeters = 0.60; // TODO: Tune this value
     public static final double kIntakeSourceAngleRadians = Math.toRadians(30.0); // TODO: Tune this value
-
-    public static final double kScoreLowHeightMeters = 0.30; // TODO: Tune this value
+    public static final double kShootAngleRadians = Math.toRadians(60.0); // TODO: Tune this value
     public static final double kScoreLowAngleRadians = Math.toRadians(45.0); // TODO: Tune this value
-
-    public static final double kScoreMidHeightMeters = 0.65; // TODO: Tune this value
-    public static final double kScoreMidAngleRadians = Math.toRadians(60.0); // TODO: Tune this value
-
-    public static final double kScoreHighHeightMeters = 1.10; // TODO: Tune this value
     public static final double kScoreHighAngleRadians = Math.toRadians(75.0); // TODO: Tune this value
-
-    public static final double kClimbHeightMeters = 1.20; // TODO: Tune this value
     public static final double kClimbAngleRadians = Math.toRadians(0.0); // TODO: Tune this value
+
+    // Sequencer Positions for Superstructure States
+    public static final double kStowHeightMeters = 0.00; // TODO: Tune this value
+    public static final double kIntakeGroundHeightMeters = 0.10; // TODO: Tune this value
+    public static final double kIntakeSourceHeightMeters = 0.60; // TODO: Tune this value
+    public static final double kShootHeightMeters = 0.80; // TODO: Tune this value
+    public static final double kScoreLowHeightMeters = 0.30; // TODO: Tune this value
+    public static final double kScoreHighHeightMeters = 1.10; // TODO: Tune this value
+    public static final double kClimbHeightMeters = 1.20; // TODO: Tune this value
   }
 }

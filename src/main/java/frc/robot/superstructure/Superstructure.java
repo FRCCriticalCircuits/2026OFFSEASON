@@ -9,24 +9,15 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.arm.Arm;
+import frc.robot.subsystems.roller.Roller;
 import frc.robot.subsystems.sequencer.Sequencer;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.superstructure.SuperstructureState.RollerAction;
+import frc.robot.superstructure.SuperstructureState.ShooterAction;
 
 /**
- * The Superstructure coordinates the Sequencer and Arm subsystems
- * using an enum-based state machine.
- *
- * <p>Typical usage in {@link frc.robot.RobotContainer}:
- * <pre>
- *   m_superstructure.setStateCommand(SuperstructureState.SCORE_HIGH).schedule();
- * </pre>
- *
- * <p>Transition safety notes:
- * <ul>
- *   <li>The sequencer moves first when going UP (arm could collide with structure if it
- *       extends at a low height — adjust sequencing for your robot geometry).</li>
- *   <li>The arm moves first when going DOWN (retract arm before lowering sequencer).</li>
- * </ul>
- * Customize {@link #applyState(SuperstructureState)} to match your robot's collision zones.
+ * The Superstructure coordinates the Sequencer, Arm, Roller, and combined Shooter (Flywheel + Hood)
+ * subsystems using an enum-based state machine.
  */
 public class Superstructure extends SubsystemBase {
 
@@ -34,6 +25,8 @@ public class Superstructure extends SubsystemBase {
 
   private final Sequencer m_sequencer;
   private final Arm       m_arm;
+  private final Roller    m_roller;
+  private final Shooter   m_shooter;
 
   // ─── State machine ─────────────────────────────────────────────────────────
 
@@ -42,16 +35,18 @@ public class Superstructure extends SubsystemBase {
 
   // ─── Constructor ───────────────────────────────────────────────────────────
 
-  public Superstructure(Sequencer sequencer, Arm arm) {
+  public Superstructure(Sequencer sequencer, Arm arm, Roller roller, Shooter shooter) {
     m_sequencer = sequencer;
     m_arm       = arm;
+    m_roller    = roller;
+    m_shooter   = shooter;
   }
 
-  // ─── Public API ────────────────────────────────────────────────────
+  // ─── Public API ────────────────────────────────────────────────────────────
 
   /**
    * Returns a {@link Command} that transitions the superstructure to {@code targetState}
-   * and finishes once both sequencer and arm are at their goals.
+   * and finishes once mechanisms reach their goals.
    *
    * @param targetState the desired {@link SuperstructureState}
    */
@@ -78,6 +73,19 @@ public class Superstructure extends SubsystemBase {
         .withName("Hold → " + targetState.name());
   }
 
+  /**
+   * Returns an automated shoot sequence command:
+   * 1. Positions arm & sequencer, sets hood angle, and spools flywheel (SPIN_UP_SHOOT).
+   * 2. Waits until flywheel reaches speed, hood reaches angle, and arm/sequencer arrive.
+   * 3. Transitions to SHOOT to feed balls through sequencer into the shooter.
+   */
+  public Command shootSequenceCommand() {
+    return setStateCommand(SuperstructureState.SPIN_UP_SHOOT)
+        .andThen(Commands.waitUntil(() -> m_shooter.isReadyToShoot() && atDesiredState()))
+        .andThen(holdStateCommand(SuperstructureState.SHOOT))
+        .withName("Superstructure.shootSequence");
+  }
+
   /** @return the state the superstructure is currently transitioning toward */
   public SuperstructureState getDesiredState() {
     return m_desiredState;
@@ -90,21 +98,50 @@ public class Superstructure extends SubsystemBase {
 
   /** @return true when sequencer and arm have both reached the desired state goals */
   public boolean atDesiredState() {
-    return m_sequencer.atGoal() && m_arm.atGoal();
+    boolean mechanismsAtGoal = m_sequencer.atGoal() && m_arm.atGoal();
+    if (m_desiredState == SuperstructureState.SHOOT || m_desiredState == SuperstructureState.SPIN_UP_SHOOT) {
+      return mechanismsAtGoal && m_shooter.isReadyToShoot();
+    }
+    return mechanismsAtGoal;
   }
 
   // ─── State application ─────────────────────────────────────────────────────
 
   /**
-   * Applies the setpoints for a given state to the subsystems.
-   *
-   * <p>Override this method to add collision-avoidance sequencing specific to
-   * your robot's geometry (e.g. delay arm movement until sequencer is above a
-   * certain height).
+   * Applies the setpoints for a given state to all subsystems.
    */
   private void applyState(SuperstructureState targetState) {
     m_sequencer.setGoal(targetState.sequencerHeightMeters);
     m_arm.setGoal(targetState.armAngleRadians);
+    applyRollerAction(targetState.rollerAction);
+    applyShooterAction(targetState.shooterAction);
+  }
+
+  private void applyRollerAction(RollerAction action) {
+    switch (action) {
+      case INTAKE  -> m_roller.runIntake();
+      case OUTTAKE -> m_roller.runOuttake();
+      case HOLD    -> m_roller.runHold();
+      case STOP    -> m_roller.stop();
+    }
+  }
+
+  private void applyShooterAction(ShooterAction action) {
+    switch (action) {
+      case SPIN_UP_HIGH, SHOOT_HIGH -> {
+        m_shooter.runFlywheel();
+        m_shooter.setHoodHighGoal();
+      }
+      case SPIN_UP_LOW, SHOOT_LOW -> {
+        m_shooter.runFlywheel();
+        m_shooter.setHoodLowGoal();
+      }
+      case IDLE -> {
+        m_shooter.runIdleFlywheel();
+        m_shooter.stowHood();
+      }
+      case STOP -> m_shooter.stop();
+    }
   }
 
   // ─── Periodic ──────────────────────────────────────────────────────────────
