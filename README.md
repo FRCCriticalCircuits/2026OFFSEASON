@@ -53,12 +53,12 @@ This project implements a **Decoupled I/O Architecture** (hardware abstraction l
                     │ (Hardware Mode - RobotBase.isReal())                         │ (Simulation Mode)
                     │                                                              │
 ┌───────────────────┴───────────────────┐                      ┌───────────────────┴────────────────────┐
-│         Real Hardware (CANivore)      │                      │           WPILib Simulation            │
+│      Real Hardware (CTRE Phoenix 6)   │                      │           WPILib Simulation            │
 │  • SwerveModuleIOKraken (TalonFX)     │                      │  • SwerveModuleIOSim (FlywheelSim)     │
 │  • GyroIOPigeon2 (Pigeon2)            │                      │  • GyroIOSim (Kinematics Integration)  │
 │  • ArmIOKraken (TalonFX)              │                      │  • ArmIOSim (SingleJointedArmSim)      │
 │  • RollerIOKraken (TalonFX)           │                      │  • RollerIOSim (FlywheelSim)           │
-│  • SequencerIOKraken (TalonFX)        │                      │  • SequencerIOSim (ElevatorSim)        │
+│  • SequencerIOKraken (TalonFX)        │                      │  • SequencerIOSim (FlywheelSim)        │
 │  • ShooterIOKraken (3x TalonFX)       │                      │  • ShooterIOSim (Flywheel+Hood Sim)    │
 └───────────────────────────────────────┘                      └────────────────────────────────────────┘
 ```
@@ -74,80 +74,83 @@ src/main/java/frc/robot/
 ├── Robot.java                     # TimedRobot lifecycle & CommandScheduler executor
 ├── RobotContainer.java            # Subsystem instantiation, hardware/sim routing & button bindings
 ├── subsystems/
-│   ├── arm/                       # Arm pivot subsystem
+│   ├── arm/                       # Arm pivot subsystem (ProfiledPID + Feedforward)
 │   │   ├── Arm.java
 │   │   ├── ArmIO.java
 │   │   ├── ArmIOKraken.java
 │   │   └── ArmIOSim.java
-│   ├── roller/                    # Intake roller subsystem
-│   │   ├── Roller.java
-│   │   ├── RollerIO.java
-│   │   ├── RollerIOKraken.java
-│   │   └── RollerIOSim.java
-│   ├── sequencer/                 # Ball indexer / elevator carriage subsystem
-│   │   ├── Sequencer.java
-│   │   ├── SequencerIO.java
-│   │   ├── SequencerIOKraken.java
-│   │   └── SequencerIOSim.java
-│   ├── shooter/                   # Combined Flywheel + Hood shooter subsystem
-│   │   ├── Shooter.java
-│   │   ├── ShooterIO.java
-│   │   ├── ShooterIOKraken.java
-│   │   └── ShooterIOSim.java
-│   └── swerve/                    # 4-module swerve drivetrain subsystem
-│       ├── GyroIO.java
-│       ├── GyroIOPigeon2.java
-│       ├── GyroIOSim.java
-│       ├── SwerveDrive.java
-│       ├── SwerveModuleIO.java
-│       ├── SwerveModuleIOKraken.java
-│       └── SwerveModuleIOSim.java
-├── superstructure/                # High-level state coordinator
-│   ├── Superstructure.java
-│   └── SuperstructureState.java
-└── util/
-    └── AutoAim.java               # Ballistics curves & real-time target distance calculations
-```
-
----
-
-## 🎯 Ball Pipeline & Auto-Aim System
-
-```
- ┌──────────────────────────────────────────────────────────────────────────────────────────────┐
- │                                   BALL MANAGEMENT PIPELINE                                   │
- └──────────────────────────────────────────────────────────────────────────────────────────────┘
-            1. INTAKE                       2. SEQUENCE                         3. SHOOT
+│   ├── roller/                    # Intake roller subsystem (Voltage control)
+�            1. INTAKE                       2. SEQUENCE                         3. SHOOT
        ┌──────────────────┐            ┌──────────────────┐               ┌──────────────────┐
        │   Arm + Roller   │ ─────────> │    Sequencer     │ ────────────> │  Flywheel + Hood │
-       │ (Sequential Move)│            │ (Index / Feed)   │               │ (Auto-Aim Dynamic)│
+       │ (Sequential Move)│            │ (Spinning Feeder)│               │ (Auto-Aim Dynamic)│
        └──────────────────┘            └──────────────────┘               └──────────────────┘
 ```
 
 ### 1. Sequential Intake
-* **Arm First**: The **Arm** pivots down to the ground angle ($-45^\circ$) while the roller is stopped.
-* **Roller Second**: Once `arm.atGoal()` is satisfied, the **Roller** wheels automatically spin forward at $+10\text{ V}$ to pull balls into the robot.
-* **Auto-Retract**: Releasing the trigger immediately returns the arm to `STOW` ($0^\circ$) and stops the roller.
+* **Arm First**: The **Arm** pivots down to the ground angle ($-75^\circ$) while the roller and sequencer are stopped.
+* **Roller Second**: Once `arm.atGoal()` is satisfied, the **Roller** wheels automatically spin forward at $+8\text{ V}$ to pull balls into the robot.
+* **Auto-Retract**: Releasing the trigger immediately returns the arm to `STOW` ($0^\circ$) and stops the roller and sequencer.
 
 ### 2. Sequencing & Staging
-* The **Sequencer** indexes balls from the intake and lifts/stages them inside the robot.
-* Automatically zeros its position whenever the lower limit switch is triggered.
+* The **Sequencer** utilizes a high-traction spinning feeder motor controlled with closed-loop velocity feedforward ($kV = 0.12\text{ V/RPS}$, $kS = 0.25\text{ V}$, $kP = 0.1$).
+* When ready to score, it accelerates to $50\text{ RPS}$ ($\approx 3000\text{ RPM}$) to feed all staged balls directly into the shooter flywheel.
 
 ### 3. Dynamic Auto-Aim & Shooting
 When holding the **Right Trigger**:
-1. **Target Tracking**: The robot calculates its distance $d = \sqrt{\Delta X^2 + \Delta Y^2}$ and required heading $\theta_{\text{target}} = \text{atan2}(\Delta Y, \Delta X)$ relative to the alliance goal.
-2. **Heading Lock & Safety Speed Scaling**: The Swerve Drive automatically rotates the chassis to face the target while the driver continues to drive and translate freely with the left joystick (scaled to 70% max speed / 30% reduction for safety).
+1. **Target Tracking**: The robot calculates its distance $d = \sqrt{\Delta X^2 + \Delta Y^2}$ and required heading $\theta_{\text{target}} = \text{atan2}(\Delta Y, \Delta X) + 180^\circ$ relative to the active alliance goal.
+2. **Heading Lock & Safety Speed Scaling**: The Swerve Drive automatically rotates the chassis to face the target ($\pm 2.0^\circ$ tolerance) while the driver continues to drive and translate freely with the left joystick (scaled to 70% max speed / 30% reduction for safety).
 3. **Ballistics Interpolation**: Dynamically computes **Flywheel Speed** and **Hood Angle** from calibrated `InterpolatingDoubleTreeMap` curves.
-4. **Auto-Feed**: Once the robot heading is locked ($\pm 1.5^\circ$), the flywheel is at speed, and the hood is at the angle, the **Sequencer** feeds balls into the flywheel!
+4. **Auto-Feed**: Once the robot heading is locked, the flywheel is at speed ($\pm 2.5\text{ RPS}$), the hood is at angle ($\pm 1.0^\circ$), and the arm is at goal, the **Sequencer** spins to feed balls into the flywheel while the roller assists at $+8\text{ V}$!
 
 ---
 
 ## 🤖 Subsystems Breakdown
 
 ### 1. Swerve Drive
-- **Module Geometry**: 4 independent modules with standard SDS MK4i L2 configuration.
-- **Drive Motors**: Kraken X60 (TalonFX) with `VoltageOut(EnableFOC = true)` and current limits (80A stator / 40A supply).
-- **Steer Motors**: Kraken X60 (TalonFX) with closed-loop onboard `PositionVoltage(EnableFOC = true)`, remote CANcoder feedback, and continuous wrap ($-0.5$ to $0.5$ rotations).
+- **Module Geometry**: 4 independent modules with standard SDS MK4i configuration ($21.9\text{ in} \times 21.9\text{ in}$ track width & wheelbase).
+- **Drive Motors**: Kraken X60 (TalonFX) with `VoltageOut(EnableFOC = true)` and current limits ($120\text{ A}$ stator / $60\text{ A}$ supply, $120\text{ A}$ slip limit).
+- **Steer Motors**: Kraken X60 (TalonFX) with closed-loop onboard `PositionVoltage(EnableFOC = true)`, remote CANcoder feedback, and continuous wrap ($-0.5$ to $0.5$ rotations). Current limits: $60\text{ A}$ stator / $40\text{ A}$ supply.
+- **Absolute Encoders**: CTRE CANcoder for absolute steering angle feedback.
+- **IMU**: CTRE Pigeon 2 (`kPigeon2CanId = 20`).
+- **Kinematics & Odometry**: `SwerveDriveKinematics` and `SwerveDriveOdometry` supporting field-relative driving, heading lock PID (`driveWithHeadingLock`), and speed desaturation.
+
+### 2. Arm
+- **Hardware**: Kraken X60 (TalonFX) (`kMotorId = 30`).
+- **Control**: WPILib `ProfiledPIDController` + `ArmFeedforward` ($kP = 25.0$) with trapezoidal motion profiling ($v_{\max} = 2\pi\text{ rad/s}$, $a_{\max} = 4\pi\text{ rad/s}^2$).
+- **Current Limits**: $60\text{ A}$ stator / $40\text{ A}$ supply.
+- **Role**: Positions the intake geometry and mechanism orientation ($-75^\circ$ ground intake, $+60^\circ$ shooting, $0^\circ$ stow).
+
+### 3. Roller (Intake)
+- **Hardware**: Kraken X60 (TalonFX) (`kMotorId = 31`).
+- **Control**: Open-loop voltage control (`runIntake()` at $+8\text{ V}$, `runOuttake()` at $-8\text{ V}$, `runHold()` at $+2\text{ V}$, `stop()`).
+- **Current Limits**: $60\text{ A}$ stator / $60\text{ A}$ supply.
+- **Role**: Pulls balls into the robot from the floor or feeding station.
+
+### 4. Sequencer (Feeder)
+- **Hardware**: Kraken X60 (TalonFX) (`kMotorId = 34`).
+- **Control**: Velocity feedforward control using $kV = 0.12\text{ V/RPS}$, $kS = 0.25\text{ V}$, $kP = 0.1$ (`VelocityVoltage(EnableFOC = true)`). Setpoint: $50\text{ RPS}$ ($\approx 3000\text{ RPM}$).
+- **Current Limits**: $80\text{ A}$ stator / $50\text{ A}$ supply.
+- **Role**: Continuously spins forward to feed all staged balls directly into the shooter flywheel and hood.
+
+### 5. Shooter (Flywheel + Adjustable Hood)
+- **Hardware**:
+  - **Dual Flywheel Motors**: 2x Kraken X60 (TalonFX) (`kFlywheelLeaderMotorId = 35`, `kFlywheelFollowerMotorId = 36`) in leader-follower configuration (`MotorAlignmentValue.Opposed`). Current limits: $80\text{ A}$ stator / $60\text{ A}$ supply.
+  - **Adjustable Hood Motor**: 1x Kraken X60 (TalonFX) (`kHoodMotorId = 37`) for precision trajectory control ($0^\circ$ to $60^\circ$). Current limits: $40\text{ A}$ stator / $40\text{ A}$ supply.
+- **Control**:
+  - Flywheel: Closed-loop `VelocityVoltage(EnableFOC = true)` with Slot 0 PID ($kP = 0.15$) & Feedforward ($kV = 0.12$, $kS = 0.25$, $kA = 0.01$).
+  - Hood: Closed-loop `PositionVoltage(EnableFOC = true)` with Slot 0 Position PID ($kP = 20.0$).
+- **Role**: Accelerates balls to precise exit velocity while angling the hood for accurate target trajectory.
+
+### 6. Superstructure State Machine
+Coordinates all mechanisms into synchronized presets:
+
+| State | Arm Angle | Roller Action | Shooter Action (Flywheel + Hood) | Sequencer Action |
+|---|---|---|---|---|
+| **`STOW`** | $0^\circ$ | `STOP` ($0\text{ V}$) | Flywheel `STOP` ($0\text{ RPS}$), Hood $0^\circ$ | `STOP` ($0\text{ RPS}$) |
+| **`INTAKE_GROUND`** | $-75^\circ$ | `INTAKE` ($+8\text{ V}$) | Flywheel `IDLE` ($20\text{ RPS}$), Hood $0^\circ$ | `STOP` ($0\text{ RPS}$) |
+| **`SPIN_UP_SHOOT`** | $+60^\circ$ | `HOLD` ($+2\text{ V}$) | Flywheel Spooling, Hood Positioning | `STOP` ($0\text{ RPS}$) |
+| **`SHOOT`** | $+60^\circ$ | `INTAKE` ($+8\text{ V}$) | Flywheel At Speed, Hood At Angle | **`FEED`** ($50\text{ RPS}$) |nd continuous wrap ($-0.5$ to $0.5$ rotations).
 - **Absolute Encoders**: CTRE CANcoder for absolute steering angle feedback.
 - **IMU**: CTRE Pigeon 2 on CANivore.
 - **Kinematics & Odometry**: `SwerveDriveKinematics` and `SwerveDriveOdometry` supporting field-relative driving, heading lock PID (`driveWithHeadingLock`), and speed desaturation.
