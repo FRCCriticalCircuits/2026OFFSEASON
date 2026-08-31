@@ -36,11 +36,10 @@ public class SequencerIOKraken implements SequencerIO {
     configuration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     configuration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    configuration.CurrentLimits.StatorCurrentLimit =
-        SequencerConstants.kStatorCurrentLimitAmps; // TODO: Tune this value
+    // Standard Kraken X60 current limits (Stator: 80A feeding torque, Supply: 40A breaker protection)
+    configuration.CurrentLimits.StatorCurrentLimit = SequencerConstants.kStatorCurrentLimitAmps;
     configuration.CurrentLimits.StatorCurrentLimitEnable = true;
-    configuration.CurrentLimits.SupplyCurrentLimit =
-        SequencerConstants.kSupplyCurrentLimitAmps; // TODO: Tune this value
+    configuration.CurrentLimits.SupplyCurrentLimit = SequencerConstants.kSupplyCurrentLimitAmps;
     configuration.CurrentLimits.SupplyCurrentLimitEnable = true;
 
     // Slot 0 velocity control gains (kV Feedforward + Feedback)

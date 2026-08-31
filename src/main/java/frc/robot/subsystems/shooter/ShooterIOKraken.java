@@ -56,20 +56,21 @@ public class ShooterIOKraken implements ShooterIO {
     flywheelLeaderConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
     flywheelLeaderConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
+    // Standard Kraken X60 current limits (Stator: 80A rapid spin-up, Supply: 60A high-power flywheel limit)
     flywheelLeaderConfig.CurrentLimits.StatorCurrentLimit =
-        ShooterConstants.kFlywheelStatorCurrentLimitAmps; // TODO: Tune this value
+        ShooterConstants.kFlywheelStatorCurrentLimitAmps;
     flywheelLeaderConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     flywheelLeaderConfig.CurrentLimits.SupplyCurrentLimit =
-        ShooterConstants.kFlywheelSupplyCurrentLimitAmps; // TODO: Tune this value
+        ShooterConstants.kFlywheelSupplyCurrentLimitAmps;
     flywheelLeaderConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
 
     // Slot 0 velocity PID & feedforward gains
-    flywheelLeaderConfig.Slot0.kP = ShooterConstants.kFlywheelProportionalGain; // TODO: Tune this value
-    flywheelLeaderConfig.Slot0.kI = ShooterConstants.kFlywheelIntegralGain; // TODO: Tune this value
-    flywheelLeaderConfig.Slot0.kD = ShooterConstants.kFlywheelDerivativeGain; // TODO: Tune this value
-    flywheelLeaderConfig.Slot0.kS = ShooterConstants.kFlywheelStaticGain; // TODO: Tune this value
-    flywheelLeaderConfig.Slot0.kV = ShooterConstants.kFlywheelVelocityGain; // TODO: Tune this value
-    flywheelLeaderConfig.Slot0.kA = ShooterConstants.kFlywheelAccelerationGain; // TODO: Tune this value
+    flywheelLeaderConfig.Slot0.kP = ShooterConstants.kFlywheelProportionalGain;
+    flywheelLeaderConfig.Slot0.kI = ShooterConstants.kFlywheelIntegralGain;
+    flywheelLeaderConfig.Slot0.kD = ShooterConstants.kFlywheelDerivativeGain;
+    flywheelLeaderConfig.Slot0.kS = ShooterConstants.kFlywheelStaticGain;
+    flywheelLeaderConfig.Slot0.kV = ShooterConstants.kFlywheelVelocityGain;
+    flywheelLeaderConfig.Slot0.kA = ShooterConstants.kFlywheelAccelerationGain;
 
     m_flywheelLeaderMotor.getConfigurator().apply(flywheelLeaderConfig);
 
@@ -93,17 +94,18 @@ public class ShooterIOKraken implements ShooterIO {
     hoodConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     hoodConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
+    // Standard Kraken X44 / X60 current limits (Stator: 40A position holding, Supply: 40A breaker protection)
     hoodConfig.CurrentLimits.StatorCurrentLimit =
-        ShooterConstants.kHoodStatorCurrentLimitAmps; // TODO: Tune this value
+        ShooterConstants.kHoodStatorCurrentLimitAmps;
     hoodConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     hoodConfig.CurrentLimits.SupplyCurrentLimit =
-        ShooterConstants.kHoodSupplyCurrentLimitAmps; // TODO: Tune this value
+        ShooterConstants.kHoodSupplyCurrentLimitAmps;
     hoodConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
 
     // Slot 0 position PID gains for hood
-    hoodConfig.Slot0.kP = ShooterConstants.kHoodProportionalGain; // TODO: Tune this value
-    hoodConfig.Slot0.kI = ShooterConstants.kHoodIntegralGain; // TODO: Tune this value
-    hoodConfig.Slot0.kD = ShooterConstants.kHoodDerivativeGain; // TODO: Tune this value
+    hoodConfig.Slot0.kP = ShooterConstants.kHoodProportionalGain;
+    hoodConfig.Slot0.kI = ShooterConstants.kHoodIntegralGain;
+    hoodConfig.Slot0.kD = ShooterConstants.kHoodDerivativeGain;
 
     m_hoodMotor.getConfigurator().apply(hoodConfig);
   }

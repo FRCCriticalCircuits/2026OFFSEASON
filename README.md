@@ -80,7 +80,7 @@ src/main/java/frc/robot/
 │   │   ├── ArmIOKraken.java
 │   │   └── ArmIOSim.java
 │   ├── roller/                    # Intake roller subsystem (Voltage control)
-�            1. INTAKE                       2. SEQUENCE                         3. SHOOT
+�            1. INTAKE                       2. SEQUENCE                         3. SHOOT
        ┌──────────────────┐            ┌──────────────────┐               ┌──────────────────┐
        │   Arm + Roller   │ ─────────> │    Sequencer     │ ────────────> │  Flywheel + Hood │
        │ (Sequential Move)│            │ (Spinning Feeder)│               │ (Auto-Aim Dynamic)│
@@ -193,11 +193,10 @@ Coordinates all mechanisms into synchronized presets:
 
 ## 📡 CAN Bus & Hardware Map
 
-All CTRE devices reside on the high-speed **CANivore** bus (`"canivore"`).
+All CTRE devices reside on the configured CAN bus (`kCANBusName`).
 
 | CAN ID | Device Type | Model | Subsystem / Location |
 |---|---|---|---|
-| **0** | IMU | Pigeon 2 | Drivetrain |
 | **1** | Motor Controller | TalonFX (Kraken X60) | Swerve Front Left Drive |
 | **2** | Motor Controller | TalonFX (Kraken X60) | Swerve Front Left Steer |
 | **3** | Absolute Encoder | CANcoder | Swerve Front Left Angle |
@@ -207,21 +206,22 @@ All CTRE devices reside on the high-speed **CANivore** bus (`"canivore"`).
 | **7** | Motor Controller | TalonFX (Kraken X60) | Swerve Back Left Drive |
 | **8** | Motor Controller | TalonFX (Kraken X60) | Swerve Back Left Steer |
 | **9** | Absolute Encoder | CANcoder | Swerve Back Left Angle |
-| **10** | Motor Controller | TalonFX (Kraken X60) | Arm Pivot Motor |
+| **10** | Motor Controller | TalonFX (Kraken X60) | Swerve Back Right Drive |
 | **11** | Motor Controller | TalonFX (Kraken X60) | Swerve Back Right Steer |
 | **12** | Absolute Encoder | CANcoder | Swerve Back Right Angle |
-| **13** | Motor Controller | TalonFX (Kraken X60) | Swerve Back Right Drive |
-| **20** | Motor Controller | TalonFX (Kraken X60) | Sequencer Lift Motor |
-| **30** | Motor Controller | TalonFX (Kraken X60) | Intake Roller Motor |
-| **40** | Motor Controller | TalonFX (Kraken X60) | Shooter Flywheel Leader |
-| **41** | Motor Controller | TalonFX (Kraken X60) | Shooter Flywheel Follower |
-| **42** | Motor Controller | TalonFX (Kraken X60) | Shooter Adjustable Hood Motor |
+| **20** | IMU | Pigeon 2 | Drivetrain Heading |
+| **30** | Motor Controller | TalonFX (Kraken X60) | Arm Pivot Motor |
+| **31** | Motor Controller | TalonFX (Kraken X60) | Intake Roller Motor |
+| **34** | Motor Controller | TalonFX (Kraken X60) | Sequencer Feeder Motor |
+| **35** | Motor Controller | TalonFX (Kraken X60) | Shooter Flywheel Leader |
+| **36** | Motor Controller | TalonFX (Kraken X60) | Shooter Flywheel Follower |
+| **37** | Motor Controller | TalonFX (Kraken X44/X60) | Shooter Adjustable Hood Motor |
 
 ---
 
 ## ⚙️ Configuration & Tuning Guide
 
-All constants are centralized in [`Constants.java`](src/main/java/frc/robot/Constants.java). Items requiring calibration on your physical robot are explicitly tagged with `// TODO: Tune this value`.
+All constants are centralized in [`Constants.java`](src/main/java/frc/robot/Constants.java).
 
 > 📋 **Detailed Tuning Checklist**: See [`TODO.md`](TODO.md) for a full step-by-step checklist, measurement procedures, and tuning instructions for every variable.
 

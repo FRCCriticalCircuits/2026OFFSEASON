@@ -48,27 +48,29 @@ public class SwerveModuleIOKraken implements SwerveModuleIO {
             ? InvertedValue.Clockwise_Positive
             : InvertedValue.CounterClockwise_Positive;
     driveConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    // Standard Kraken X60 Drive current limits (Stator: 120A peak slip torque limit, Supply: 60A breaker protection)
     driveConfiguration.CurrentLimits.StatorCurrentLimit =
-        SwerveConstants.kDriveStatorCurrentLimitAmps; // TODO: Tune this value
+        SwerveConstants.kDriveStatorCurrentLimitAmps;
     driveConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
     driveConfiguration.CurrentLimits.SupplyCurrentLimit =
-        SwerveConstants.kDriveSupplyCurrentLimitAmps; // TODO: Tune this value
+        SwerveConstants.kDriveSupplyCurrentLimitAmps;
     driveConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
     m_driveMotor.getConfigurator().apply(driveConfiguration);
 
     TalonFXConfiguration steerConfiguration = new TalonFXConfiguration();
     steerConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     steerConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    // Standard Kraken X60 Steer current limits (Stator: 60A azimuth control limit, Supply: 40A breaker protection)
     steerConfiguration.CurrentLimits.StatorCurrentLimit =
-        SwerveConstants.kSteerStatorCurrentLimitAmps; // TODO: Tune this value
+        SwerveConstants.kSteerStatorCurrentLimitAmps;
     steerConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;
     steerConfiguration.CurrentLimits.SupplyCurrentLimit =
-        SwerveConstants.kSteerSupplyCurrentLimitAmps; // TODO: Tune this value
+        SwerveConstants.kSteerSupplyCurrentLimitAmps;
     steerConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
 
-    steerConfiguration.Slot0.kP = SwerveConstants.kSteerProportionalGain; // TODO: Tune this value
-    steerConfiguration.Slot0.kI = SwerveConstants.kSteerIntegralGain; // TODO: Tune this value
-    steerConfiguration.Slot0.kD = SwerveConstants.kSteerDerivativeGain; // TODO: Tune this value
+    steerConfiguration.Slot0.kP = SwerveConstants.kSteerProportionalGain;
+    steerConfiguration.Slot0.kI = SwerveConstants.kSteerIntegralGain;
+    steerConfiguration.Slot0.kD = SwerveConstants.kSteerDerivativeGain;
     steerConfiguration.ClosedLoopGeneral.ContinuousWrap = true;
 
     steerConfiguration.Feedback.FeedbackRemoteSensorID = cancoderCanId;

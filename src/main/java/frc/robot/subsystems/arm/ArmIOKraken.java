@@ -33,9 +33,10 @@ public class ArmIOKraken implements ArmIO {
     configuration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     configuration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    configuration.CurrentLimits.StatorCurrentLimit = ArmConstants.kStatorCurrentLimitAmps; // TODO: Tune this value
+    // Standard Kraken X60 current limits (Stator: 60A peak torque limit, Supply: 40A breaker protection)
+    configuration.CurrentLimits.StatorCurrentLimit = ArmConstants.kStatorCurrentLimitAmps;
     configuration.CurrentLimits.StatorCurrentLimitEnable = true;
-    configuration.CurrentLimits.SupplyCurrentLimit = ArmConstants.kSupplyCurrentLimitAmps; // TODO: Tune this value
+    configuration.CurrentLimits.SupplyCurrentLimit = ArmConstants.kSupplyCurrentLimitAmps;
     configuration.CurrentLimits.SupplyCurrentLimitEnable = true;
 
     m_motor.getConfigurator().apply(configuration);

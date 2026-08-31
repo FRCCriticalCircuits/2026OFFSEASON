@@ -79,7 +79,7 @@ public final class Constants {
     // Physical Constants
     public static final double kGearRatio = 1.0;
 
-    // Current Limits
+    // Kraken X60 Current Limits
     public static final double kStatorCurrentLimitAmps = 80.0;
     public static final double kSupplyCurrentLimitAmps = 50.0;
 
@@ -102,7 +102,7 @@ public final class Constants {
     public static final double kFlywheelStatorCurrentLimitAmps = 80.0;
     public static final double kFlywheelSupplyCurrentLimitAmps = 60.0;
 
-    // Flywheel Velocity Closed-Loop PID & Feedforward Gains (Slot 0 on TalonFX)
+    // Flywheel Velocity Closed-Loop PID & Feedforward Gains (Slot 0 on Kraken X60 TalonFX)
     public static final double kFlywheelProportionalGain = 0.15;
     public static final double kFlywheelIntegralGain = 0.0;
     public static final double kFlywheelDerivativeGain = 0.0;
@@ -125,7 +125,7 @@ public final class Constants {
     public static final double kHoodStatorCurrentLimitAmps = 40.0;
     public static final double kHoodSupplyCurrentLimitAmps = 40.0;
 
-    // Hood Position Closed-Loop PID Gains (Slot 0 on TalonFX)
+    // Hood Position Closed-Loop PID Gains (Slot 0 on Kraken X44/X60 TalonFX)
     public static final double kHoodProportionalGain = 20.0;
     public static final double kHoodIntegralGain = 0.0;
     public static final double kHoodDerivativeGain = 0.0;

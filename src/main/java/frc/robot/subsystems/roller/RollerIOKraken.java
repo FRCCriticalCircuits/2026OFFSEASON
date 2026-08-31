@@ -33,11 +33,10 @@ public class RollerIOKraken implements RollerIO {
     configuration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
     configuration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    configuration.CurrentLimits.StatorCurrentLimit =
-        RollerConstants.kStatorCurrentLimitAmps; // TODO: Tune this value
+    // Standard Kraken X60 current limits (Stator: 60A peak torque limit, Supply: 40A breaker protection)
+    configuration.CurrentLimits.StatorCurrentLimit = RollerConstants.kStatorCurrentLimitAmps;
     configuration.CurrentLimits.StatorCurrentLimitEnable = true;
-    configuration.CurrentLimits.SupplyCurrentLimit =
-        RollerConstants.kSupplyCurrentLimitAmps; // TODO: Tune this value
+    configuration.CurrentLimits.SupplyCurrentLimit = RollerConstants.kSupplyCurrentLimitAmps;
     configuration.CurrentLimits.SupplyCurrentLimitEnable = true;
 
     m_motor.getConfigurator().apply(configuration);
