@@ -4,6 +4,11 @@
 
 package frc.robot.subsystems.swerve;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.ModuleConfig;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -13,6 +18,9 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -76,6 +84,8 @@ public class SwerveDrive extends SubsystemBase {
 
     m_headingController.enableContinuousInput(-Math.PI, Math.PI);
     m_headingController.setTolerance(AutoAimConstants.kHeadingToleranceRadians);
+
+    configureAutoBuilder();
   }
 
   /**
@@ -208,6 +218,97 @@ public class SwerveDrive extends SubsystemBase {
    */
   public void resetOdometry(Pose2d targetPose) {
     m_odometry.resetPosition(getHeading(), getModulePositions(), targetPose);
+  }
+
+  /**
+   * Returns the current robot-relative chassis speeds.
+   *
+   * @return Current robot-relative ChassisSpeeds.
+   */
+  public ChassisSpeeds getRobotRelativeSpeeds() {
+    return m_kinematics.toChassisSpeeds(getModuleStates());
+  }
+
+  /**
+   * Drives the robot using robot-relative chassis speeds.
+   *
+   * @param speeds Target robot-relative ChassisSpeeds.
+   */
+  public void driveRobotRelative(ChassisSpeeds speeds) {
+    SwerveModuleState[] targetStates = m_kinematics.toSwerveModuleStates(speeds);
+    SwerveDriveKinematics.desaturateWheelSpeeds(
+        targetStates, SwerveConstants.kMaxSpeedMetersPerSecond);
+
+    for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
+      targetStates[moduleIndex].optimize(m_moduleInputs[moduleIndex].steerAngle);
+      double targetVoltage =
+          (targetStates[moduleIndex].speedMetersPerSecond / SwerveConstants.kMaxSpeedMetersPerSecond)
+              * 12.0;
+      m_moduleIOs[moduleIndex].setDriveVoltage(targetVoltage);
+      m_moduleIOs[moduleIndex].setSteerAngle(targetStates[moduleIndex].angle);
+    }
+  }
+
+  /**
+   * Returns the swerve drive kinematics object.
+   *
+   * @return Kinematics instance for this drivetrain.
+   */
+  public SwerveDriveKinematics getKinematics() {
+    return m_kinematics;
+  }
+
+  /**
+   * Configures PathPlanner AutoBuilder for autonomous trajectory tracking.
+   */
+  public void configureAutoBuilder() {
+    RobotConfig robotConfig;
+    try {
+      robotConfig = RobotConfig.fromGUISettings();
+    } catch (Exception e) {
+      double halfWheelbaseMeters = SwerveConstants.kWheelbaseMeters / 2.0;
+      double halfTrackWidthMeters = SwerveConstants.kTrackWidthMeters / 2.0;
+      Translation2d[] moduleOffsets =
+          new Translation2d[] {
+            new Translation2d(halfWheelbaseMeters, halfTrackWidthMeters),
+            new Translation2d(halfWheelbaseMeters, -halfTrackWidthMeters),
+            new Translation2d(-halfWheelbaseMeters, halfTrackWidthMeters),
+            new Translation2d(-halfWheelbaseMeters, -halfTrackWidthMeters)
+          };
+      ModuleConfig moduleConfig =
+          new ModuleConfig(
+              SwerveConstants.kWheelRadiusMeters,
+              SwerveConstants.kMaxSpeedMetersPerSecond,
+              SwerveConstants.kWheelCOF,
+              DCMotor.getKrakenX60(1),
+              SwerveConstants.kDriveGearRatio,
+              SwerveConstants.kDriveSupplyCurrentLimitAmps,
+              1);
+      robotConfig =
+          new RobotConfig(
+              SwerveConstants.kRobotMassKg,
+              SwerveConstants.kRobotMOIKgM2,
+              moduleConfig,
+              moduleOffsets);
+    }
+
+    AutoBuilder.configure(
+        this::getPose,
+        this::resetOdometry,
+        this::getRobotRelativeSpeeds,
+        this::driveRobotRelative,
+        new PPHolonomicDriveController(
+            new PIDConstants(
+                SwerveConstants.kAutoTranslationKP,
+                SwerveConstants.kAutoTranslationKI,
+                SwerveConstants.kAutoTranslationKD),
+            new PIDConstants(
+                SwerveConstants.kAutoRotationKP,
+                SwerveConstants.kAutoRotationKI,
+                SwerveConstants.kAutoRotationKD)),
+        robotConfig,
+        () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
+        this);
   }
 
   private SwerveModulePosition[] getModulePositions() {

@@ -1,0 +1,73 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimShoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "CenterlinePiece1"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Piece1ToHubScore"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimShoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "CenterlinePiece2"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Piece2ToHubScore"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimShoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "CenterlinePiece3"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimShoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Stow"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

@@ -128,4 +128,34 @@ public class SubsystemsTest {
     assertNotNull(swerve.getPose());
     assertEquals(0.0, swerve.getHeading().getDegrees(), 1e-3);
   }
+
+  @Test
+  public void testSwerveAutoBuilderIntegration() {
+    SwerveDrive swerve =
+        new SwerveDrive(
+            new GyroIOSim(),
+            new SwerveModuleIOSim(),
+            new SwerveModuleIOSim(),
+            new SwerveModuleIOSim(),
+            new SwerveModuleIOSim());
+
+    // Kinematics accessor
+    assertNotNull(swerve.getKinematics());
+
+    // Robot relative speeds accessor
+    edu.wpi.first.math.kinematics.ChassisSpeeds currentSpeeds = swerve.getRobotRelativeSpeeds();
+    assertNotNull(currentSpeeds);
+
+    // Robot relative driving
+    swerve.driveRobotRelative(new edu.wpi.first.math.kinematics.ChassisSpeeds(2.0, 1.0, 0.5));
+    swerve.periodic();
+
+    // AutoBuilder configured
+    assertTrue(com.pathplanner.lib.auto.AutoBuilder.isConfigured());
+
+    // Odometry reset
+    swerve.resetOdometry(new Pose2d(2.0, 4.0, Rotation2d.fromDegrees(90)));
+    assertEquals(2.0, swerve.getPose().getX(), 1e-3);
+    assertEquals(4.0, swerve.getPose().getY(), 1e-3);
+  }
 }

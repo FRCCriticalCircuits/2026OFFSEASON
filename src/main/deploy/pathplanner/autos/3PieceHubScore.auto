@@ -1,0 +1,61 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimShoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "HubToPiece1"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Piece1ToHub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimShoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "HubToPiece2"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Piece2ToHub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimShoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Stow"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

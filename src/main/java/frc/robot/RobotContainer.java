@@ -4,7 +4,11 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -40,6 +44,10 @@ public class RobotContainer {
 
   private final CommandXboxController m_driverController =
       new CommandXboxController(DriverConstants.kDriverControllerPort);
+
+  // ─── Autonomous Chooser ────────────────────────────────────────────────────
+
+  private final SendableChooser<Command> m_autoChooser;
 
   // ─── Subsystems ────────────────────────────────────────────────────────────
 
@@ -110,7 +118,47 @@ public class RobotContainer {
 
     m_superstructure = new Superstructure(m_sequencer, m_arm, m_roller, m_shooter);
 
+    // Register all superstructure named commands before building the auto chooser
+    registerNamedCommands();
+
+    // Build PathPlanner auto chooser and publish to SmartDashboard
+    if (AutoBuilder.isConfigured()) {
+      m_autoChooser = AutoBuilder.buildAutoChooser("Mobility");
+    } else {
+      m_autoChooser = new SendableChooser<>();
+    }
+    SmartDashboard.putData("Auto Chooser", m_autoChooser);
+
     configureButtonBindings();
+  }
+
+  // ─── Named Commands Registration ──────────────────────────────────────────
+
+  private void registerNamedCommands() {
+    NamedCommands.registerCommand(
+        "Intake",
+        m_superstructure.intakeSequenceCommand().withTimeout(2.5));
+
+    NamedCommands.registerCommand(
+        "AutoAimShoot",
+        m_superstructure.autoAimAndShootCommand(m_swerveDrive, () -> 0.0, () -> 0.0)
+            .withTimeout(2.0));
+
+    NamedCommands.registerCommand(
+        "Stow",
+        m_superstructure.setStateCommand(SuperstructureState.STOW));
+
+    NamedCommands.registerCommand(
+        "SpinUp",
+        m_superstructure.setStateCommand(SuperstructureState.SPIN_UP_SHOOT).withTimeout(1.0));
+
+    NamedCommands.registerCommand(
+        "Eject",
+        Commands.startEnd(m_roller::runOuttake, m_roller::stop, m_superstructure).withTimeout(1.0));
+
+    NamedCommands.registerCommand(
+        "Shoot",
+        m_superstructure.setStateCommand(SuperstructureState.SHOOT).withTimeout(1.5));
   }
 
   // ─── Button bindings ───────────────────────────────────────────────────────
@@ -150,12 +198,9 @@ public class RobotContainer {
   // ─── Autonomous ────────────────────────────────────────────────────────────
 
   public Command getAutonomousCommand() {
-    // Example autonomous sequence — Intake -> Auto-Aim Shoot -> Stow
-    return m_superstructure.intakeSequenceCommand().withTimeout(2.0)
-        .andThen(
-            m_superstructure.autoAimAndShootCommand(m_swerveDrive, () -> 0.0, () -> 0.0)
-                .withTimeout(2.5))
-        .andThen(m_superstructure.setStateCommand(SuperstructureState.STOW))
-        .withName("Example Auto-Aim Autonomous Command");
+    if (m_autoChooser != null && m_autoChooser.getSelected() != null) {
+      return m_autoChooser.getSelected();
+    }
+    return Commands.none();
   }
 }

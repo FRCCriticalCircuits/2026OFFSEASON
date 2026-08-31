@@ -231,6 +231,34 @@ public final class Constants {
     public static final int kBackRightCANcoderId = 12;
     public static final double kBackRightCANcoderOffsetRotations = -0.247314453125;
     public static final boolean kBackRightDriveInverted = true;
+
+    // ─── Autonomous PID & Physical Constants ─────────────────────────────────
+    public static final double kAutoTranslationKP = 5.0;
+    public static final double kAutoTranslationKI = 0.0;
+    public static final double kAutoTranslationKD = 0.0;
+
+    public static final double kAutoRotationKP = 5.0;
+    public static final double kAutoRotationKI = 0.0;
+    public static final double kAutoRotationKD = 0.0;
+
+    public static final double kRobotMassKg = 45.0;
+    public static final double kRobotMOIKgM2 = 4.0;
+    public static final double kWheelCOF = 1.2;
+  }
+
+  public static final class AutoConstants {
+    public static final double kMaxSpeedMetersPerSecond = 4.0;
+    public static final double kMaxAccelerationMetersPerSecondSquared = 3.0;
+    public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI * 2.0;
+    public static final double kMaxAngularAccelerationRadiansPerSecondSquared = Math.PI * 4.0;
+
+    public static final double kTranslationKP = 5.0;
+    public static final double kTranslationKI = 0.0;
+    public static final double kTranslationKD = 0.0;
+
+    public static final double kRotationKP = 5.0;
+    public static final double kRotationKI = 0.0;
+    public static final double kRotationKD = 0.0;
   }
 
   public static final class SuperstructureConstants {
