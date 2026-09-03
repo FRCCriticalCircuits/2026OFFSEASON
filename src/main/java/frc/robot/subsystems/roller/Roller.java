@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.RollerConstants;
+import java.util.Objects;
 
 /**
  * Roller subsystem for intaking and outtaking game pieces/balls.
@@ -23,7 +24,7 @@ public class Roller extends SubsystemBase {
    * @param rollerIO the hardware abstraction layer to use
    */
   public Roller(RollerIO rollerIO) {
-    m_rollerIO = rollerIO;
+    m_rollerIO = Objects.requireNonNull(rollerIO, "rollerIO cannot be null");
   }
 
   // ─── Control Methods ───────────────────────────────────────────────────────
@@ -54,7 +55,20 @@ public class Roller extends SubsystemBase {
    * @param appliedVolts voltage from -12.0 to 12.0
    */
   public void setVoltage(double appliedVolts) {
+    if (!Double.isFinite(appliedVolts)) {
+      m_rollerIO.setVoltage(0.0);
+      return;
+    }
     m_rollerIO.setVoltage(appliedVolts);
+  }
+
+  /**
+   * Configures the neutral brake/coast mode for the roller motors.
+   *
+   * @param enableBrakeMode true for brake mode, false for coast mode
+   */
+  public void setBrakeMode(boolean enableBrakeMode) {
+    m_rollerIO.setBrakeMode(enableBrakeMode);
   }
 
   // ─── Getters ───────────────────────────────────────────────────────────────
@@ -62,6 +76,26 @@ public class Roller extends SubsystemBase {
   /** @return current roller velocity in rotations per second */
   public double getVelocityRotationsPerSecond() {
     return m_inputs.velocityRotationsPerSecond;
+  }
+
+  /** @return current drawn by leader roller motor in amps */
+  public double getLeaderCurrentAmps() {
+    return m_inputs.leaderCurrentAmps;
+  }
+
+  /** @return current drawn by follower roller motor in amps */
+  public double getFollowerCurrentAmps() {
+    return m_inputs.followerCurrentAmps;
+  }
+
+  /** @return current drawn by leader roller motor in amps (alias for backwards compatibility) */
+  public double getCurrentAmps() {
+    return m_inputs.leaderCurrentAmps;
+  }
+
+  /** @return applied voltage to the roller leader motor in volts */
+  public double getAppliedVolts() {
+    return m_inputs.appliedVolts;
   }
 
   /** @return true if a game piece / ball is detected */
@@ -94,7 +128,9 @@ public class Roller extends SubsystemBase {
 
     SmartDashboard.putNumber("Roller/Velocity (RPS)", m_inputs.velocityRotationsPerSecond);
     SmartDashboard.putNumber("Roller/Applied Output (V)", m_inputs.appliedVolts);
-    SmartDashboard.putNumber("Roller/Current (A)", m_inputs.currentAmps);
+    SmartDashboard.putNumber("Roller/Leader Current (A)", m_inputs.leaderCurrentAmps);
+    SmartDashboard.putNumber("Roller/Follower Current (A)", m_inputs.followerCurrentAmps);
+    SmartDashboard.putNumber("Roller/Current (A)", m_inputs.leaderCurrentAmps);
     SmartDashboard.putBoolean("Roller/Game Piece Detected", m_inputs.gamePieceDetected);
   }
 }

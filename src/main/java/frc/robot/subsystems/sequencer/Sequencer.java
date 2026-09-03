@@ -78,6 +78,26 @@ public class Sequencer extends SubsystemBase {
         <= SequencerConstants.kToleranceRotationsPerSecond;
   }
 
+  /** @return current drawn by the leader motor in amps */
+  public double getLeaderCurrentAmps() {
+    return m_inputs.leaderCurrentAmps;
+  }
+
+  /** @return current drawn by the follower motor in amps */
+  public double getFollowerCurrentAmps() {
+    return m_inputs.followerCurrentAmps;
+  }
+
+  /** @return total current drawn by the sequencer in amps */
+  public double getCurrentAmps() {
+    return m_inputs.currentAmps;
+  }
+
+  /** @return applied voltage to the sequencer in volts */
+  public double getAppliedVolts() {
+    return m_inputs.appliedVolts;
+  }
+
   // ─── Command Factories ─────────────────────────────────────────────────────
 
   /** @return command that continuously feeds balls */
@@ -100,6 +120,8 @@ public class Sequencer extends SubsystemBase {
     SmartDashboard.putNumber("Sequencer/Target Velocity (RPS)", m_targetVelocityRotationsPerSecond);
     SmartDashboard.putNumber("Sequencer/Applied Output (V)", m_inputs.appliedVolts);
     SmartDashboard.putNumber("Sequencer/Current (A)", m_inputs.currentAmps);
+    SmartDashboard.putNumber("Sequencer/Leader Current (A)", m_inputs.leaderCurrentAmps);
+    SmartDashboard.putNumber("Sequencer/Follower Current (A)", m_inputs.followerCurrentAmps);
     SmartDashboard.putBoolean("Sequencer/At Target Speed", isAtTargetSpeed());
   }
 }

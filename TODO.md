@@ -38,12 +38,18 @@ Device IDs configured from `TunerConstants.java` and `Constants.java`:
   - [x] Drive Motor: `kBackRightDriveMotorId = 10`
   - [x] Steer Motor: `kBackRightSteerMotorId = 11`
   - [x] CANcoder: `kBackRightCANcoderId = 12`
-- [x] **Arm (Intake Deploy) Motor**: `ArmConstants.kMotorId = 30`
-- [x] **Roller (Intake Leader) Motor**: `RollerConstants.kMotorId = 31`
-- [x] **Sequencer (Feeder) Motor**: `SequencerConstants.kMotorId = 34`
-- [x] **Shooter Flywheel Leader Motor**: `ShooterConstants.kFlywheelLeaderMotorId = 35`
-- [x] **Shooter Flywheel Follower Motor**: `ShooterConstants.kFlywheelFollowerMotorId = 36`
-- [x] **Shooter Hood Motor**: `ShooterConstants.kHoodMotorId = 37`
+- [x] **Arm (Intake Deploy) Motor**: `ArmConstants.kMotorId = 30` (NEO Vortex on SPARK Flex)
+- [x] **Roller (Intake Leader) Motor**: `RollerConstants.kLeaderMotorId = 31` (Kraken X60)
+- [x] **Roller (Intake Follower) Motor**: `RollerConstants.kFollowerMotorId = 32` (Kraken X60)
+- [x] **Sequencer Leader Motor**: `SequencerConstants.kLeaderMotorId = 33` (NEO Vortex on SPARK Flex)
+- [x] **Sequencer Follower Motor**: `SequencerConstants.kFollowerMotorId = 34` (NEO Vortex on SPARK Flex)
+- [x] **Shooter Flywheel Leader Motor**: `ShooterConstants.kFlywheelLeaderMotorId = 35` (Kraken X60)
+- [x] **Shooter Flywheel Follower 1 Motor**: `ShooterConstants.kFlywheelFollower1MotorId = 36` (Kraken X60)
+- [x] **Shooter Flywheel Follower 2 Motor**: `ShooterConstants.kFlywheelFollower2MotorId = 38` (Kraken X60)
+- [x] **Shooter Flywheel Follower 3 Motor**: `ShooterConstants.kFlywheelFollower3MotorId = 39` (Kraken X60)
+- [x] **Shooter Hood Motor**: `ShooterConstants.kHoodMotorId = 37` (Kraken X44/X60)
+- [x] **Shooter Accelerator Leader Motor**: `ShooterConstants.kAcceleratorLeaderMotorId = 40` (NEO Vortex on SPARK Flex)
+- [x] **Shooter Accelerator Follower Motor**: `ShooterConstants.kAcceleratorFollowerMotorId = 41` (NEO Vortex on SPARK Flex)
 
 ---
 
@@ -112,7 +118,9 @@ Device IDs configured from `TunerConstants.java` and `Constants.java`:
 
 | Variable | Configured Value | Description |
 |---|---|---|
-| `kMotorId` | `31` | Intake leader motor ID |
+| `kLeaderMotorId` | `31` | Intake leader Kraken X60 motor ID |
+| `kFollowerMotorId` | `32` | Intake follower Kraken X60 motor ID (Aligned) |
+| `kStatorCurrentLimitAmps` | `60.0` | Peak torque stator current limit |
 | `kSupplyCurrentLimitAmps` | `60.0` | Supply current limit |
 | `kIntakeAppliedVolts` | `8.0` | Forward intake voltage |
 | `kEjectAppliedVolts` | `-8.0` | Reverse eject voltage |

@@ -17,8 +17,8 @@ public class SequencerIOSim implements SequencerIO {
   private final FlywheelSim m_sequencerSimulation =
       new FlywheelSim(
           LinearSystemId.createFlywheelSystem(
-              DCMotor.getKrakenX60(1), 0.001, SequencerConstants.kGearRatio),
-          DCMotor.getKrakenX60(1));
+              DCMotor.getNeoVortex(2), 0.001, SequencerConstants.kGearRatio),
+          DCMotor.getNeoVortex(2));
 
   private double m_appliedVolts = 0.0;
   private double m_targetVelocityRotationsPerSecond = 0.0;
@@ -44,6 +44,8 @@ public class SequencerIOSim implements SequencerIO {
     inputs.positionRotations += inputs.velocityRotationsPerSecond * 0.020;
     inputs.appliedVolts = m_appliedVolts;
     inputs.currentAmps = m_sequencerSimulation.getCurrentDrawAmps();
+    inputs.leaderCurrentAmps = inputs.currentAmps / 2.0;
+    inputs.followerCurrentAmps = inputs.currentAmps / 2.0;
   }
 
   @Override

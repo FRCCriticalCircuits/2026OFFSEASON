@@ -117,7 +117,8 @@ public class ShooterIOKraken implements ShooterIO {
     inputs.flywheelTargetVelocityRotationsPerSecond = m_flywheelTargetVelocityRotationsPerSecond;
     inputs.flywheelAppliedVolts = m_flywheelLeaderMotor.getMotorVoltage().getValueAsDouble();
     inputs.flywheelLeaderCurrentAmps = m_flywheelLeaderMotor.getStatorCurrent().getValueAsDouble();
-    inputs.flywheelFollowerCurrentAmps = m_flywheelFollowerMotor.getStatorCurrent().getValueAsDouble();
+    inputs.flywheelFollower1CurrentAmps = m_flywheelFollowerMotor.getStatorCurrent().getValueAsDouble();
+    inputs.flywheelFollowerCurrentAmps = inputs.flywheelFollower1CurrentAmps;
 
     // Hood inputs: convert motor rotations -> mechanism radians
     double motorRotations = m_hoodMotor.getPosition().getValueAsDouble();

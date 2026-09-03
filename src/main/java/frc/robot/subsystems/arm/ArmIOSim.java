@@ -25,7 +25,7 @@ public class ArmIOSim implements ArmIO {
 
   private final SingleJointedArmSim m_armSimulation =
       new SingleJointedArmSim(
-          DCMotor.getKrakenX60(1),
+          DCMotor.getNeoVortex(1),
           ArmConstants.kGearRatio,
           kMomentOfInertiaKgMetersSquared,
           ArmConstants.kArmLengthMeters,

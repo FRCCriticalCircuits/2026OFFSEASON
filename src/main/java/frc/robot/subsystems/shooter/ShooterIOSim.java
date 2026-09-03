@@ -13,15 +13,16 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.Constants.ShooterConstants;
 
 /**
- * WPILib simulation implementation of {@link ShooterIO} supporting flywheel and hood plants.
+ * WPILib simulation implementation of {@link ShooterIO} supporting 4-Kraken flywheel,
+ * dual NEO Vortex accelerator, and adjustable hood plants.
  */
 public class ShooterIOSim implements ShooterIO {
-  // ── Flywheel Simulation ───────────────────────────────────────────────────
+  // ── Flywheel Simulation (4x Kraken X60) ───────────────────────────────────
   private final FlywheelSim m_flywheelSimulation =
       new FlywheelSim(
           LinearSystemId.createFlywheelSystem(
-              DCMotor.getKrakenX60(2), 0.003, ShooterConstants.kFlywheelGearRatio),
-          DCMotor.getKrakenX60(2));
+              DCMotor.getKrakenX60(4), 0.004, ShooterConstants.kFlywheelGearRatio),
+          DCMotor.getKrakenX60(4));
 
   private final PIDController m_flywheelFeedback =
       new PIDController(ShooterConstants.kFlywheelProportionalGain, 0.0, 0.0);
@@ -30,7 +31,18 @@ public class ShooterIOSim implements ShooterIO {
   private double m_flywheelAppliedVolts = 0.0;
   private boolean m_flywheelClosedLoop = false;
 
-  // ── Hood Simulation ───────────────────────────────────────────────────────
+  // ── Accelerator Simulation (2x NEO Vortex) ────────────────────────────────
+  private final FlywheelSim m_acceleratorSimulation =
+      new FlywheelSim(
+          LinearSystemId.createFlywheelSystem(
+              DCMotor.getNeoVortex(2), 0.001, 1.0),
+          DCMotor.getNeoVortex(2));
+
+  private double m_acceleratorTargetVelocityRotationsPerSecond = 0.0;
+  private double m_acceleratorAppliedVolts = 0.0;
+  private boolean m_acceleratorClosedLoop = false;
+
+  // ── Hood Simulation (1x Kraken) ───────────────────────────────────────────
   private final SingleJointedArmSim m_hoodSimulation =
       new SingleJointedArmSim(
           DCMotor.getKrakenX60(1),
@@ -52,6 +64,10 @@ public class ShooterIOSim implements ShooterIO {
 
   @Override
   public void updateInputs(ShooterIOInputs inputs) {
+    if (inputs == null) {
+      return;
+    }
+
     // 1. Flywheel Sim Update
     if (m_flywheelClosedLoop && m_flywheelTargetVelocityRotationsPerSecond > 0.0) {
       double currentRps = m_flywheelSimulation.getAngularVelocityRadPerSec() / (2.0 * Math.PI);
@@ -70,10 +86,33 @@ public class ShooterIOSim implements ShooterIO {
     inputs.flywheelVelocityRotationsPerSecond = currentFlywheelRps;
     inputs.flywheelTargetVelocityRotationsPerSecond = m_flywheelTargetVelocityRotationsPerSecond;
     inputs.flywheelAppliedVolts = m_flywheelAppliedVolts;
-    inputs.flywheelLeaderCurrentAmps = m_flywheelSimulation.getCurrentDrawAmps() / 2.0;
-    inputs.flywheelFollowerCurrentAmps = m_flywheelSimulation.getCurrentDrawAmps() / 2.0;
+    double perFlywheelMotorCurrent = m_flywheelSimulation.getCurrentDrawAmps() / 4.0;
+    inputs.flywheelLeaderCurrentAmps = perFlywheelMotorCurrent;
+    inputs.flywheelFollower1CurrentAmps = perFlywheelMotorCurrent;
+    inputs.flywheelFollowerCurrentAmps = perFlywheelMotorCurrent;
+    inputs.flywheelFollower2CurrentAmps = perFlywheelMotorCurrent;
+    inputs.flywheelFollower3CurrentAmps = perFlywheelMotorCurrent;
 
-    // 2. Hood Sim Update
+    // 2. Accelerator Sim Update
+    if (m_acceleratorClosedLoop && m_acceleratorTargetVelocityRotationsPerSecond > 0.0) {
+      m_acceleratorAppliedVolts =
+          MathUtil.clamp(
+              m_acceleratorTargetVelocityRotationsPerSecond * ShooterConstants.kAcceleratorVelocityGain,
+              -12.0,
+              12.0);
+    }
+    m_acceleratorSimulation.setInputVoltage(m_acceleratorAppliedVolts);
+    m_acceleratorSimulation.update(0.020);
+
+    double currentAccelRps = m_acceleratorSimulation.getAngularVelocityRadPerSec() / (2.0 * Math.PI);
+    inputs.acceleratorVelocityRotationsPerSecond = currentAccelRps;
+    inputs.acceleratorTargetVelocityRotationsPerSecond = m_acceleratorTargetVelocityRotationsPerSecond;
+    inputs.acceleratorAppliedVolts = m_acceleratorAppliedVolts;
+    double perAccelMotorCurrent = m_acceleratorSimulation.getCurrentDrawAmps() / 2.0;
+    inputs.acceleratorLeaderCurrentAmps = perAccelMotorCurrent;
+    inputs.acceleratorFollowerCurrentAmps = perAccelMotorCurrent;
+
+    // 3. Hood Sim Update
     if (m_hoodClosedLoop) {
       double currentAngleRad = m_hoodSimulation.getAngleRads();
       m_hoodAppliedVolts =
@@ -112,6 +151,28 @@ public class ShooterIOSim implements ShooterIO {
     m_flywheelClosedLoop = false;
     m_flywheelTargetVelocityRotationsPerSecond = 0.0;
     m_flywheelAppliedVolts = 0.0;
+  }
+
+  // ── Accelerator Control ────────────────────────────────────────────────────
+
+  @Override
+  public void setAcceleratorVelocity(double velocityRotationsPerSecond) {
+    m_acceleratorClosedLoop = true;
+    m_acceleratorTargetVelocityRotationsPerSecond = velocityRotationsPerSecond;
+  }
+
+  @Override
+  public void setAcceleratorVoltage(double appliedVolts) {
+    m_acceleratorClosedLoop = false;
+    m_acceleratorTargetVelocityRotationsPerSecond = 0.0;
+    m_acceleratorAppliedVolts = MathUtil.clamp(appliedVolts, -12.0, 12.0);
+  }
+
+  @Override
+  public void stopAccelerator() {
+    m_acceleratorClosedLoop = false;
+    m_acceleratorTargetVelocityRotationsPerSecond = 0.0;
+    m_acceleratorAppliedVolts = 0.0;
   }
 
   // ── Hood Control ───────────────────────────────────────────────────────────
