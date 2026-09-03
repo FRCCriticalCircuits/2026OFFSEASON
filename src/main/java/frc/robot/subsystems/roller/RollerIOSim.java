@@ -11,19 +11,22 @@ import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import frc.robot.Constants.RollerConstants;
 
 /**
- * WPILib simulation implementation of {@link RollerIO}.
+ * WPILib simulation implementation of {@link RollerIO} modeling 2 Kraken X60 motors.
  */
 public class RollerIOSim implements RollerIO {
   private final FlywheelSim m_rollerSimulation =
       new FlywheelSim(
           LinearSystemId.createFlywheelSystem(
-              DCMotor.getKrakenX60(1), 0.001, RollerConstants.kGearRatio),
-          DCMotor.getKrakenX60(1));
+              DCMotor.getKrakenX60(2), 0.001, RollerConstants.kGearRatio),
+          DCMotor.getKrakenX60(2));
 
   private double m_appliedVolts = 0.0;
 
   @Override
   public void updateInputs(RollerIOInputs inputs) {
+    if (inputs == null) {
+      return;
+    }
     m_rollerSimulation.setInputVoltage(m_appliedVolts);
     m_rollerSimulation.update(0.020);
 
@@ -31,12 +34,19 @@ public class RollerIOSim implements RollerIO {
     inputs.velocityRotationsPerSecond =
         m_rollerSimulation.getAngularVelocityRadPerSec() / (2.0 * Math.PI);
     inputs.appliedVolts = m_appliedVolts;
-    inputs.currentAmps = m_rollerSimulation.getCurrentDrawAmps();
+    double totalCurrent = m_rollerSimulation.getCurrentDrawAmps();
+    inputs.leaderCurrentAmps = totalCurrent / 2.0;
+    inputs.followerCurrentAmps = totalCurrent / 2.0;
+    inputs.currentAmps = inputs.leaderCurrentAmps;
     inputs.gamePieceDetected = false;
   }
 
   @Override
   public void setVoltage(double appliedVolts) {
+    if (!Double.isFinite(appliedVolts)) {
+      m_appliedVolts = 0.0;
+      return;
+    }
     m_appliedVolts = MathUtil.clamp(appliedVolts, -12.0, 12.0);
   }
 

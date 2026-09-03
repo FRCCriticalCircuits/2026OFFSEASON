@@ -28,8 +28,14 @@ public interface SequencerIO {
     /** Applied voltage to the sequencer motor (volts). */
     public double appliedVolts = 0.0;
 
-    /** Current drawn by the sequencer motor (amps). */
+    /** Current drawn by the sequencer motor(s) combined (amps). */
     public double currentAmps = 0.0;
+
+    /** Current drawn by the leader motor (amps). */
+    public double leaderCurrentAmps = 0.0;
+
+    /** Current drawn by the follower motor (amps). */
+    public double followerCurrentAmps = 0.0;
   }
 
   // ─── Default no-op implementations ────────────────────────────────────────

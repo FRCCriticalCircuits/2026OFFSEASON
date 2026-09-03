@@ -18,10 +18,16 @@ public interface RollerIO {
     /** Current roller rotational velocity in rotations per second. */
     public double velocityRotationsPerSecond = 0.0;
 
-    /** Applied voltage to the roller motor (volts). */
+    /** Applied voltage to the leader roller motor (volts). */
     public double appliedVolts = 0.0;
 
-    /** Supply/stator current drawn by the roller motor (amps). */
+    /** Stator current drawn by the leader roller motor (amps). */
+    public double leaderCurrentAmps = 0.0;
+
+    /** Stator current drawn by the follower roller motor (amps). */
+    public double followerCurrentAmps = 0.0;
+
+    /** Stator current drawn by the roller leader motor (amps) for backwards compatibility. */
     public double currentAmps = 0.0;
 
     /** Whether a game piece / ball is detected inside the intake roller. */

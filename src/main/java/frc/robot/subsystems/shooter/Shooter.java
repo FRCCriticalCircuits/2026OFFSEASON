@@ -11,13 +11,14 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
 
 /**
- * Combined Shooter subsystem managing both the high-speed Flywheel and the adjustable Hood.
+ * Combined Shooter subsystem managing the 4-Kraken Flywheel, 2-NEO-Vortex Accelerator, and adjustable Hood.
  */
 public class Shooter extends SubsystemBase {
   private final ShooterIO m_shooterIO;
   private final ShooterIO.ShooterIOInputs m_inputs = new ShooterIO.ShooterIOInputs();
 
   private double m_targetFlywheelVelocityRotationsPerSecond = 0.0;
+  private double m_targetAcceleratorVelocityRotationsPerSecond = 0.0;
   private double m_targetHoodAngleRadians = 0.0;
 
   /**
@@ -63,6 +64,35 @@ public class Shooter extends SubsystemBase {
     m_shooterIO.setFlywheelVoltage(appliedVolts);
   }
 
+  // ─── Accelerator / Kicker Control ──────────────────────────────────────────
+
+  /** Runs the accelerator kicker roller at default target feeding velocity. */
+  public void runAccelerator() {
+    setAcceleratorVelocity(ShooterConstants.kAcceleratorTargetVelocityRotationsPerSecond);
+  }
+
+  /**
+   * Sets closed-loop target velocity for the accelerator.
+   *
+   * @param velocityRotationsPerSecond target speed
+   */
+  public void setAcceleratorVelocity(double velocityRotationsPerSecond) {
+    m_targetAcceleratorVelocityRotationsPerSecond = velocityRotationsPerSecond;
+    m_shooterIO.setAcceleratorVelocity(velocityRotationsPerSecond);
+  }
+
+  /** Stops the accelerator motors. */
+  public void stopAccelerator() {
+    m_targetAcceleratorVelocityRotationsPerSecond = 0.0;
+    m_shooterIO.stopAccelerator();
+  }
+
+  /** Sets open-loop voltage to the accelerator motors. */
+  public void setAcceleratorVoltage(double appliedVolts) {
+    m_targetAcceleratorVelocityRotationsPerSecond = 0.0;
+    m_shooterIO.setAcceleratorVoltage(appliedVolts);
+  }
+
   // ─── Hood Control ──────────────────────────────────────────────────────────
 
   /**
@@ -92,10 +122,11 @@ public class Shooter extends SubsystemBase {
 
   // ─── Combined Control ──────────────────────────────────────────────────────
 
-  /** Prepares shot with specific flywheel velocity and hood angle. */
+  /** Prepares shot with specific flywheel velocity and hood angle, spinning up the accelerator as well. */
   public void prepareShot(double flywheelVelocityRps, double hoodAngleRad) {
     setFlywheelVelocity(flywheelVelocityRps);
     setHoodAngle(hoodAngleRad);
+    runAccelerator();
   }
 
   /**
@@ -109,10 +140,11 @@ public class Shooter extends SubsystemBase {
     prepareShot(flywheelRps, hoodAngleRad);
   }
 
-  /** Stops both flywheel and hood. */
+  /** Stops all shooter components (flywheel, hood, and accelerator). */
   public void stop() {
     stopFlywheel();
     stopHood();
+    stopAccelerator();
   }
 
   // ─── Status & Getters ──────────────────────────────────────────────────────
@@ -125,6 +157,16 @@ public class Shooter extends SubsystemBase {
   /** @return target flywheel velocity in rotations per second */
   public double getTargetFlywheelVelocityRotationsPerSecond() {
     return m_targetFlywheelVelocityRotationsPerSecond;
+  }
+
+  /** @return current accelerator velocity in rotations per second */
+  public double getAcceleratorVelocityRotationsPerSecond() {
+    return m_inputs.acceleratorVelocityRotationsPerSecond;
+  }
+
+  /** @return target accelerator velocity in rotations per second */
+  public double getTargetAcceleratorVelocityRotationsPerSecond() {
+    return m_targetAcceleratorVelocityRotationsPerSecond;
   }
 
   /** @return current hood angle in radians */
@@ -147,15 +189,29 @@ public class Shooter extends SubsystemBase {
         <= ShooterConstants.kFlywheelToleranceRotationsPerSecond;
   }
 
+  /** @return true when accelerator is within velocity tolerance */
+  public boolean atTargetAcceleratorSpeed() {
+    if (m_targetAcceleratorVelocityRotationsPerSecond <= 0.0) {
+      return false;
+    }
+    return Math.abs(
+            m_inputs.acceleratorVelocityRotationsPerSecond - m_targetAcceleratorVelocityRotationsPerSecond)
+        <= ShooterConstants.kAcceleratorToleranceRotationsPerSecond;
+  }
+
   /** @return true when hood is within angle tolerance */
   public boolean atTargetHoodAngle() {
     return Math.abs(m_inputs.hoodAngleRadians - m_targetHoodAngleRadians)
         <= ShooterConstants.kHoodToleranceRadians;
   }
 
-  /** @return true when BOTH flywheel and hood have reached their target setpoints */
+  /** @return true when flywheel, hood, and accelerator have reached their target setpoints */
   public boolean isReadyToShoot() {
-    return atTargetFlywheelSpeed() && atTargetHoodAngle();
+    boolean flywheelReady = atTargetFlywheelSpeed();
+    boolean hoodReady = atTargetHoodAngle();
+    boolean accelReady =
+        m_targetAcceleratorVelocityRotationsPerSecond <= 0.0 || atTargetAcceleratorSpeed();
+    return flywheelReady && hoodReady && accelReady;
   }
 
   // ─── Command Factories ─────────────────────────────────────────────────────
@@ -180,13 +236,23 @@ public class Shooter extends SubsystemBase {
   public void periodic() {
     m_shooterIO.updateInputs(m_inputs);
 
-    // Flywheel Telemetry
+    // Flywheel Telemetry (4 Krakens)
     SmartDashboard.putNumber("Shooter/Flywheel Velocity (RPS)", m_inputs.flywheelVelocityRotationsPerSecond);
     SmartDashboard.putNumber("Shooter/Flywheel Target (RPS)", m_targetFlywheelVelocityRotationsPerSecond);
     SmartDashboard.putNumber("Shooter/Flywheel Output (V)", m_inputs.flywheelAppliedVolts);
     SmartDashboard.putNumber("Shooter/Flywheel Leader Current (A)", m_inputs.flywheelLeaderCurrentAmps);
-    SmartDashboard.putNumber("Shooter/Flywheel Follower Current (A)", m_inputs.flywheelFollowerCurrentAmps);
+    SmartDashboard.putNumber("Shooter/Flywheel Follower 1 Current (A)", m_inputs.flywheelFollower1CurrentAmps);
+    SmartDashboard.putNumber("Shooter/Flywheel Follower 2 Current (A)", m_inputs.flywheelFollower2CurrentAmps);
+    SmartDashboard.putNumber("Shooter/Flywheel Follower 3 Current (A)", m_inputs.flywheelFollower3CurrentAmps);
     SmartDashboard.putBoolean("Shooter/At Target Speed", atTargetFlywheelSpeed());
+
+    // Accelerator Telemetry (2 NEO Vortex)
+    SmartDashboard.putNumber("Shooter/Accelerator Velocity (RPS)", m_inputs.acceleratorVelocityRotationsPerSecond);
+    SmartDashboard.putNumber("Shooter/Accelerator Target (RPS)", m_targetAcceleratorVelocityRotationsPerSecond);
+    SmartDashboard.putNumber("Shooter/Accelerator Output (V)", m_inputs.acceleratorAppliedVolts);
+    SmartDashboard.putNumber("Shooter/Accelerator Leader Current (A)", m_inputs.acceleratorLeaderCurrentAmps);
+    SmartDashboard.putNumber("Shooter/Accelerator Follower Current (A)", m_inputs.acceleratorFollowerCurrentAmps);
+    SmartDashboard.putBoolean("Shooter/Accelerator At Speed", atTargetAcceleratorSpeed());
 
     // Hood Telemetry
     SmartDashboard.putNumber("Shooter/Hood Angle (deg)", Math.toDegrees(m_inputs.hoodAngleRadians));
