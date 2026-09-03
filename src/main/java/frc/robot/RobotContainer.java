@@ -6,6 +6,7 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -30,7 +31,7 @@ import frc.robot.subsystems.sequencer.SequencerIOSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIOKraken;
 import frc.robot.subsystems.shooter.ShooterIOSim;
-import frc.robot.subsystems.swerve.GyroIOPigeon2;
+import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOSim;
 import frc.robot.subsystems.swerve.SwerveDrive;
 import frc.robot.subsystems.swerve.SwerveModuleIOKraken;
@@ -77,7 +78,7 @@ public class RobotContainer {
                   ShooterConstants.kHoodMotorId));
       m_swerveDrive =
           new SwerveDrive(
-              new GyroIOPigeon2(SwerveConstants.kPigeon2CanId),
+              new GyroIO() {},
               new SwerveModuleIOKraken(
                   SwerveConstants.kFrontLeftDriveMotorId,
                   SwerveConstants.kFrontLeftSteerMotorId,
@@ -167,10 +168,10 @@ public class RobotContainer {
     // ── 1. Swerve Drive Default Command ─────────────────────────────────────
     m_swerveDrive.setDefaultCommand(
         m_swerveDrive.driveCommand(
-            () -> -m_driverController.getLeftY(),  // Forward / backward translation
-            () -> -m_driverController.getLeftX(),  // Left / right translation
-            () -> -m_driverController.getRightX(), // Rotation
-            true                                   // Field-relative driving
+            () -> MathUtil.applyDeadband(-m_driverController.getLeftY(), 0.1),  // Forward / backward translation
+            () -> MathUtil.applyDeadband(-m_driverController.getLeftX(), 0.1),  // Left / right translation
+            () -> MathUtil.applyDeadband(-m_driverController.getRightX(), 0.1), // Rotation
+            false                                  // Robot-relative driving (no physical Gyro)
         ));
 
     // Reset gyro heading — Start button
@@ -184,15 +185,15 @@ public class RobotContainer {
     // ── 3. Single Driver Action Bindings ────────────────────────────────────
 
     // INTAKE: Sequential Ground Intake (Arm deploys -> waits for angle -> spins roller -> stows on release)
-    m_driverController.leftTrigger().whileTrue(
+    m_driverController.leftTrigger(DriverConstants.kTriggerThreshold).whileTrue(
         m_superstructure.intakeSequenceCommand());
 
     // SHOOT: Dynamic Auto-Aim & Shoot (Heading lock + dynamic flywheel/hood -> auto-feed)
-    m_driverController.rightTrigger().whileTrue(
+    m_driverController.rightTrigger(DriverConstants.kTriggerThreshold).whileTrue(
         m_superstructure.autoAimAndShootCommand(
             m_swerveDrive,
-            () -> -m_driverController.getLeftY(),
-            () -> -m_driverController.getLeftX()));
+            () -> MathUtil.applyDeadband(-m_driverController.getLeftY(), 0.1),
+            () -> MathUtil.applyDeadband(-m_driverController.getLeftX(), 0.1)));
   }
 
   // ─── Autonomous ────────────────────────────────────────────────────────────
