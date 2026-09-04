@@ -83,6 +83,11 @@ public class Arm extends SubsystemBase {
     m_feedbackController.setGoal(targetAngleRadians);
   }
 
+  /** @return desired arm goal angle in radians */
+  public double getGoalAngleRadians() {
+    return m_goalAngleRadians;
+  }
+
   /** @return true when the arm is at the goal angle within tolerance */
   public boolean atGoal() {
     return m_feedbackController.atGoal();

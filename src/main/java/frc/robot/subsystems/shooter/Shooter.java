@@ -11,7 +11,13 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
 
 /**
- * Combined Shooter subsystem managing the 5-Kraken Flywheel and adjustable Hood (6 motors total).
+ * Combined Shooter subsystem managing:
+ * <ul>
+ *   <li>4-Kraken Flywheels (TalonFX)</li>
+ *   <li>1-Kraken Adjustable Hood (TalonFX CAN 37)</li>
+ *   <li>1-NEO Vortex Supporting Shooter (SPARK MAX CAN 42)</li>
+ * </ul>
+ * Total: strictly 6 motors (5 Kraken X60 + 1 NEO Vortex).
  */
 public class Shooter extends SubsystemBase {
   private final ShooterIO m_shooterIO;
@@ -19,6 +25,7 @@ public class Shooter extends SubsystemBase {
 
   private double m_targetFlywheelVelocityRotationsPerSecond = 0.0;
   private double m_targetHoodAngleRadians = 0.0;
+  private double m_targetSupportingShooterVelocityRotationsPerSecond = 0.0;
 
   /**
    * Creates a new Shooter subsystem.
@@ -90,12 +97,43 @@ public class Shooter extends SubsystemBase {
     m_shooterIO.setHoodVoltage(appliedVolts);
   }
 
+  // ─── Supporting Shooter Control (1x NEO Vortex on SPARK MAX) ───────────────
+
+  /** Runs the supporting shooter kicker roller at default target feeding velocity. */
+  public void runSupportingShooter() {
+    setSupportingShooterVelocity(
+        ShooterConstants.kSupportingShooterTargetVelocityRotationsPerSecond);
+  }
+
+  /**
+   * Sets closed-loop target velocity for the supporting shooter.
+   *
+   * @param velocityRotationsPerSecond target speed
+   */
+  public void setSupportingShooterVelocity(double velocityRotationsPerSecond) {
+    m_targetSupportingShooterVelocityRotationsPerSecond = velocityRotationsPerSecond;
+    m_shooterIO.setSupportingShooterVelocity(velocityRotationsPerSecond);
+  }
+
+  /** Stops the supporting shooter motor. */
+  public void stopSupportingShooter() {
+    m_targetSupportingShooterVelocityRotationsPerSecond = 0.0;
+    m_shooterIO.stopSupportingShooter();
+  }
+
+  /** Sets open-loop voltage to the supporting shooter motor. */
+  public void setSupportingShooterVoltage(double appliedVolts) {
+    m_targetSupportingShooterVelocityRotationsPerSecond = 0.0;
+    m_shooterIO.setSupportingShooterVoltage(appliedVolts);
+  }
+
   // ─── Combined Control ──────────────────────────────────────────────────────
 
-  /** Prepares shot with specific flywheel velocity and hood angle. */
+  /** Prepares shot with specific flywheel velocity, hood angle, and starts supporting shooter. */
   public void prepareShot(double flywheelVelocityRps, double hoodAngleRad) {
     setFlywheelVelocity(flywheelVelocityRps);
     setHoodAngle(hoodAngleRad);
+    runSupportingShooter();
   }
 
   /**
@@ -109,10 +147,11 @@ public class Shooter extends SubsystemBase {
     prepareShot(flywheelRps, hoodAngleRad);
   }
 
-  /** Stops all shooter components (flywheel and hood). */
+  /** Stops all shooter components (flywheel, hood, and supporting shooter). */
   public void stop() {
     stopFlywheel();
     stopHood();
+    stopSupportingShooter();
   }
 
   // ─── Status & Getters ──────────────────────────────────────────────────────
@@ -137,6 +176,16 @@ public class Shooter extends SubsystemBase {
     return m_targetHoodAngleRadians;
   }
 
+  /** @return current supporting shooter velocity in rotations per second */
+  public double getSupportingShooterVelocityRotationsPerSecond() {
+    return m_inputs.supportingShooterVelocityRotationsPerSecond;
+  }
+
+  /** @return target supporting shooter velocity in rotations per second */
+  public double getTargetSupportingShooterVelocityRotationsPerSecond() {
+    return m_targetSupportingShooterVelocityRotationsPerSecond;
+  }
+
   /** @return true when flywheel is within velocity tolerance */
   public boolean atTargetFlywheelSpeed() {
     if (m_targetFlywheelVelocityRotationsPerSecond <= 0.0) {
@@ -153,9 +202,25 @@ public class Shooter extends SubsystemBase {
         <= ShooterConstants.kHoodToleranceRadians;
   }
 
-  /** @return true when flywheel and hood have reached their target setpoints */
+  /** @return true when supporting shooter is within velocity tolerance */
+  public boolean atTargetSupportingShooterSpeed() {
+    if (m_targetSupportingShooterVelocityRotationsPerSecond <= 0.0) {
+      return false;
+    }
+    return Math.abs(
+            m_inputs.supportingShooterVelocityRotationsPerSecond
+                - m_targetSupportingShooterVelocityRotationsPerSecond)
+        <= ShooterConstants.kSupportingShooterToleranceRotationsPerSecond;
+  }
+
+  /** @return true when flywheel, hood, and supporting shooter have reached their target setpoints */
   public boolean isReadyToShoot() {
-    return atTargetFlywheelSpeed() && atTargetHoodAngle();
+    boolean flywheelReady = atTargetFlywheelSpeed();
+    boolean hoodReady = atTargetHoodAngle();
+    boolean supportingReady =
+        m_targetSupportingShooterVelocityRotationsPerSecond <= 0.0
+            || atTargetSupportingShooterSpeed();
+    return flywheelReady && hoodReady && supportingReady;
   }
 
   // ─── Command Factories ─────────────────────────────────────────────────────
@@ -180,7 +245,7 @@ public class Shooter extends SubsystemBase {
   public void periodic() {
     m_shooterIO.updateInputs(m_inputs);
 
-    // Flywheel Telemetry (5 Krakens)
+    // Flywheel Telemetry (4 Krakens)
     SmartDashboard.putNumber("Shooter/Flywheel Velocity (RPS)", m_inputs.flywheelVelocityRotationsPerSecond);
     SmartDashboard.putNumber("Shooter/Flywheel Target (RPS)", m_targetFlywheelVelocityRotationsPerSecond);
     SmartDashboard.putNumber("Shooter/Flywheel Output (V)", m_inputs.flywheelAppliedVolts);
@@ -188,15 +253,23 @@ public class Shooter extends SubsystemBase {
     SmartDashboard.putNumber("Shooter/Flywheel Follower 1 Current (A)", m_inputs.flywheelFollower1CurrentAmps);
     SmartDashboard.putNumber("Shooter/Flywheel Follower 2 Current (A)", m_inputs.flywheelFollower2CurrentAmps);
     SmartDashboard.putNumber("Shooter/Flywheel Follower 3 Current (A)", m_inputs.flywheelFollower3CurrentAmps);
-    SmartDashboard.putNumber("Shooter/Flywheel Follower 4 Current (A)", m_inputs.flywheelFollower4CurrentAmps);
     SmartDashboard.putBoolean("Shooter/At Target Speed", atTargetFlywheelSpeed());
 
-    // Hood Telemetry
+    // Hood Telemetry (1 Kraken X60 CAN 37)
     SmartDashboard.putNumber("Shooter/Hood Angle (deg)", Math.toDegrees(m_inputs.hoodAngleRadians));
     SmartDashboard.putNumber("Shooter/Hood Target (deg)", Math.toDegrees(m_targetHoodAngleRadians));
     SmartDashboard.putNumber("Shooter/Hood Output (V)", m_inputs.hoodAppliedVolts);
     SmartDashboard.putNumber("Shooter/Hood Current (A)", m_inputs.hoodCurrentAmps);
     SmartDashboard.putBoolean("Shooter/Hood At Target Angle", atTargetHoodAngle());
+
+    // Supporting Shooter Telemetry (1 NEO Vortex CAN 42)
+    SmartDashboard.putNumber(
+        "Shooter/Supporting Velocity (RPS)", m_inputs.supportingShooterVelocityRotationsPerSecond);
+    SmartDashboard.putNumber(
+        "Shooter/Supporting Target (RPS)", m_targetSupportingShooterVelocityRotationsPerSecond);
+    SmartDashboard.putNumber("Shooter/Supporting Output (V)", m_inputs.supportingShooterAppliedVolts);
+    SmartDashboard.putNumber("Shooter/Supporting Current (A)", m_inputs.supportingShooterCurrentAmps);
+    SmartDashboard.putBoolean("Shooter/Supporting At Speed", atTargetSupportingShooterSpeed());
 
     // Combined Ready State
     SmartDashboard.putBoolean("Shooter/Ready To Shoot", isReadyToShoot());

@@ -85,8 +85,8 @@ public class RobotContainer {
                   ShooterConstants.kFlywheelFollower1MotorId,
                   ShooterConstants.kFlywheelFollower2MotorId,
                   ShooterConstants.kFlywheelFollower3MotorId,
-                  ShooterConstants.kFlywheelFollower4MotorId,
-                  ShooterConstants.kHoodMotorId));
+                  ShooterConstants.kHoodMotorId,
+                  ShooterConstants.kSupportingShooterMotorId));
       m_swerveDrive =
           new SwerveDrive(
               new GyroIO() {},

@@ -112,9 +112,9 @@ public class Superstructure extends SubsystemBase {
   /**
    * Dynamic Auto-Aim & Shoot Command:
    * 1. Continuously tracks distance to goal and aligns swerve heading while driver translates.
-   * 2. Dynamically calculates and applies flywheel speed and hood angle from distance.
-   * 3. Once heading, flywheel speed, hood angle, and arm are locked, spins sequencer to feed balls.
-   * 4. Automatically returns to STOW and stops shooter and sequencer when released.
+   * 2. Dynamically calculates and applies flywheel speed, hood angle, and supporting shooter from distance.
+   * 3. Once heading and shooter are locked (arm pivot motor is NOT used), spins sequencer to feed balls.
+   * 4. Automatically stops shooter, sequencer, and roller when released without altering arm position.
    *
    * @param swerve Swerve drivetrain subsystem.
    * @param xSpeedSupplier Driver X translation supplier.
@@ -143,14 +143,10 @@ public class Superstructure extends SubsystemBase {
               aimResult.flywheelVelocityRotationsPerSecond,
               aimResult.hoodAngleRadians);
 
-          // 3. Set arm to shooting setpoint
-          m_arm.setGoal(SuperstructureState.SPIN_UP_SHOOT.armAngleRadians);
-
-          // 4. Feed balls when on target
+          // 3. Feed balls when on target (arm pivot motor is NOT used for auto-aim)
           boolean fullyReady =
               aimResult.headingAligned
-                  && m_shooter.isReadyToShoot()
-                  && m_arm.atGoal();
+                  && m_shooter.isReadyToShoot();
 
           if (fullyReady) {
             m_sequencer.feed();   // Spin sequencer to feed all balls into shooter
@@ -169,10 +165,10 @@ public class Superstructure extends SubsystemBase {
         },
         this,
         swerve).finallyDo(interrupted -> {
-          // Return to STOW and stop shooter & sequencer upon trigger release
+          // Stop shooter, sequencer, and roller upon trigger release (leave arm untouched)
           m_shooter.stop();
           m_sequencer.stop();
-          applyState(SuperstructureState.STOW);
+          m_roller.stop();
           m_desiredState = SuperstructureState.STOW;
         }).withName("Superstructure.autoAimAndShoot");
   }
@@ -180,7 +176,6 @@ public class Superstructure extends SubsystemBase {
   public Command manual_shoot() {
     return Commands.run(
         () -> {
-          m_arm.setGoal(Math.toRadians(15));
           m_shooter.prepareShot(
               60, Math.toRadians(10));
         });

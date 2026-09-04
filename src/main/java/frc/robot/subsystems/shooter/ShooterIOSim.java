@@ -13,16 +13,20 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.Constants.ShooterConstants;
 
 /**
- * WPILib simulation implementation of {@link ShooterIO} supporting 5-Kraken flywheel
- * and adjustable hood plants.
+ * WPILib simulation implementation of {@link ShooterIO} supporting:
+ * <ul>
+ *   <li>4-Kraken X60 flywheel plant</li>
+ *   <li>1-Kraken X60 adjustable hood plant</li>
+ *   <li>1-NEO Vortex supporting shooter kicker plant</li>
+ * </ul>
  */
 public class ShooterIOSim implements ShooterIO {
-  // ── Flywheel Simulation (5x Kraken X60) ───────────────────────────────────
+  // ── Flywheel Simulation (4x Kraken X60) ───────────────────────────────────
   private final FlywheelSim m_flywheelSimulation =
       new FlywheelSim(
           LinearSystemId.createFlywheelSystem(
-              DCMotor.getKrakenX60(5), 0.004, ShooterConstants.kFlywheelGearRatio),
-          DCMotor.getKrakenX60(5));
+              DCMotor.getKrakenX60(4), 0.004, ShooterConstants.kFlywheelGearRatio),
+          DCMotor.getKrakenX60(4));
 
   private final PIDController m_flywheelFeedback =
       new PIDController(ShooterConstants.kFlywheelProportionalGain, 0.0, 0.0);
@@ -31,10 +35,10 @@ public class ShooterIOSim implements ShooterIO {
   private double m_flywheelAppliedVolts = 0.0;
   private boolean m_flywheelClosedLoop = false;
 
-  // ── Hood Simulation (1x NEO Vortex) ───────────────────────────────────────
+  // ── Hood Simulation (1x Kraken X60) ───────────────────────────────────────
   private final SingleJointedArmSim m_hoodSimulation =
       new SingleJointedArmSim(
-          DCMotor.getNeoVortex(1),
+          DCMotor.getKrakenX60(1),
           ShooterConstants.kHoodGearRatio,
           0.005, // J (kg*m^2)
           0.20,  // arm length (m)
@@ -51,13 +55,27 @@ public class ShooterIOSim implements ShooterIO {
   private double m_hoodAppliedVolts = 0.0;
   private boolean m_hoodClosedLoop = false;
 
+  // ── Supporting Shooter Simulation (1x NEO Vortex) ─────────────────────────
+  private final FlywheelSim m_supportingShooterSimulation =
+      new FlywheelSim(
+          LinearSystemId.createFlywheelSystem(
+              DCMotor.getNeoVortex(1), 0.001, ShooterConstants.kSupportingShooterGearRatio),
+          DCMotor.getNeoVortex(1));
+
+  private final PIDController m_supportingFeedback =
+      new PIDController(ShooterConstants.kSupportingShooterProportionalGain, 0.0, 0.0);
+
+  private double m_supportingShooterTargetVelocityRotationsPerSecond = 0.0;
+  private double m_supportingShooterAppliedVolts = 0.0;
+  private boolean m_supportingClosedLoop = false;
+
   @Override
   public void updateInputs(ShooterIOInputs inputs) {
     if (inputs == null) {
       return;
     }
 
-    // 1. Flywheel Sim Update
+    // 1. Flywheel Sim Update (4 Krakens)
     if (m_flywheelClosedLoop && m_flywheelTargetVelocityRotationsPerSecond > 0.0) {
       double currentRps = m_flywheelSimulation.getAngularVelocityRadPerSec() / (2.0 * Math.PI);
       double feedforwardVolts =
@@ -75,15 +93,14 @@ public class ShooterIOSim implements ShooterIO {
     inputs.flywheelVelocityRotationsPerSecond = currentFlywheelRps;
     inputs.flywheelTargetVelocityRotationsPerSecond = m_flywheelTargetVelocityRotationsPerSecond;
     inputs.flywheelAppliedVolts = m_flywheelAppliedVolts;
-    double perFlywheelMotorCurrent = m_flywheelSimulation.getCurrentDrawAmps() / 5.0;
+    double perFlywheelMotorCurrent = m_flywheelSimulation.getCurrentDrawAmps() / 4.0;
     inputs.flywheelLeaderCurrentAmps = perFlywheelMotorCurrent;
     inputs.flywheelFollower1CurrentAmps = perFlywheelMotorCurrent;
     inputs.flywheelFollowerCurrentAmps = perFlywheelMotorCurrent;
     inputs.flywheelFollower2CurrentAmps = perFlywheelMotorCurrent;
     inputs.flywheelFollower3CurrentAmps = perFlywheelMotorCurrent;
-    inputs.flywheelFollower4CurrentAmps = perFlywheelMotorCurrent;
 
-    // 2. Hood Sim Update
+    // 2. Hood Sim Update (1 Kraken X60)
     if (m_hoodClosedLoop) {
       double currentAngleRad = m_hoodSimulation.getAngleRads();
       m_hoodAppliedVolts =
@@ -100,6 +117,30 @@ public class ShooterIOSim implements ShooterIO {
     inputs.hoodTargetAngleRadians = m_hoodTargetAngleRadians;
     inputs.hoodAppliedVolts = m_hoodAppliedVolts;
     inputs.hoodCurrentAmps = m_hoodSimulation.getCurrentDrawAmps();
+
+    // 3. Supporting Shooter Sim Update (1 NEO Vortex)
+    if (m_supportingClosedLoop && m_supportingShooterTargetVelocityRotationsPerSecond > 0.0) {
+      double currentSupportingRps =
+          m_supportingShooterSimulation.getAngularVelocityRadPerSec() / (2.0 * Math.PI);
+      double feedforwardVolts =
+          (m_supportingShooterTargetVelocityRotationsPerSecond * ShooterConstants.kSupportingShooterVelocityGain)
+              + ShooterConstants.kSupportingShooterStaticGain;
+      double feedbackVolts =
+          m_supportingFeedback.calculate(
+              currentSupportingRps, m_supportingShooterTargetVelocityRotationsPerSecond);
+      m_supportingShooterAppliedVolts = MathUtil.clamp(feedforwardVolts + feedbackVolts, -12.0, 12.0);
+    }
+
+    m_supportingShooterSimulation.setInputVoltage(m_supportingShooterAppliedVolts);
+    m_supportingShooterSimulation.update(0.020);
+
+    double currentSupportingRps =
+        m_supportingShooterSimulation.getAngularVelocityRadPerSec() / (2.0 * Math.PI);
+    inputs.supportingShooterVelocityRotationsPerSecond = currentSupportingRps;
+    inputs.supportingShooterTargetVelocityRotationsPerSecond =
+        m_supportingShooterTargetVelocityRotationsPerSecond;
+    inputs.supportingShooterAppliedVolts = m_supportingShooterAppliedVolts;
+    inputs.supportingShooterCurrentAmps = m_supportingShooterSimulation.getCurrentDrawAmps();
   }
 
   // ── Flywheel Control ───────────────────────────────────────────────────────
@@ -123,7 +164,6 @@ public class ShooterIOSim implements ShooterIO {
     m_flywheelTargetVelocityRotationsPerSecond = 0.0;
     m_flywheelAppliedVolts = 0.0;
   }
-
 
   // ── Hood Control ───────────────────────────────────────────────────────────
 
@@ -152,5 +192,27 @@ public class ShooterIOSim implements ShooterIO {
   @Override
   public void resetHoodEncoder() {
     // Sim reset handled internally
+  }
+
+  // ── Supporting Shooter Control ─────────────────────────────────────────────
+
+  @Override
+  public void setSupportingShooterVelocity(double velocityRotationsPerSecond) {
+    m_supportingClosedLoop = true;
+    m_supportingShooterTargetVelocityRotationsPerSecond = velocityRotationsPerSecond;
+  }
+
+  @Override
+  public void setSupportingShooterVoltage(double appliedVolts) {
+    m_supportingClosedLoop = false;
+    m_supportingShooterTargetVelocityRotationsPerSecond = 0.0;
+    m_supportingShooterAppliedVolts = MathUtil.clamp(appliedVolts, -12.0, 12.0);
+  }
+
+  @Override
+  public void stopSupportingShooter() {
+    m_supportingClosedLoop = false;
+    m_supportingShooterTargetVelocityRotationsPerSecond = 0.0;
+    m_supportingShooterAppliedVolts = 0.0;
   }
 }

@@ -127,19 +127,24 @@ Device IDs configured from `TunerConstants.java` and `Constants.java`:
 
 ---
 
-## 6. Shooter (Flywheel + Hood) Tuning
+## 6. Shooter (Flywheel + Hood + Supporting Shooter) Tuning
 
 | Variable | Configured Value | Description |
 |---|---|---|
-| `kFlywheelLeaderMotorId` | `35` | Flywheel leader motor |
-| `kFlywheelFollowerMotorId` | `36` | Flywheel follower motor |
+| `kFlywheelLeaderMotorId` | `35` | Flywheel leader Kraken X60 motor |
+| `kFlywheelFollower1MotorId` | `36` | Flywheel follower 1 Kraken X60 motor (Opposed) |
+| `kFlywheelFollower2MotorId` | `38` | Flywheel follower 2 Kraken X60 motor (Aligned) |
+| `kFlywheelFollower3MotorId` | `39` | Flywheel follower 3 Kraken X60 motor (Opposed) |
 | `kFlywheelProportionalGain` ($kP$) | `0.15` | Flywheel velocity $kP$ |
 | `kFlywheelSupplyCurrentLimitAmps` | `60.0` | Flywheel supply limit |
-| `kHoodMotorId` | `42` | Hood motor ID |
-| `kHoodProportionalGain` ($kP$) | `20.0` | Hood position $kP$ |
+| `kHoodMotorId` | `37` | Adjustable Hood Kraken X60 motor |
+| `kHoodProportionalGain` ($kP$) | `2.5` | Hood position $kP$ |
 | `kHoodSupplyCurrentLimitAmps` | `40.0` | Hood supply limit |
 | `kHoodMinAngleRadians` | $0^\circ$ | Hood minimum angle |
 | `kHoodMaxAngleRadians` | $60^\circ$ | Hood maximum angle |
+| `kSupportingShooterMotorId` | `42` | Supporting shooter kicker NEO Vortex (SPARK MAX) |
+| `kSupportingShooterSmartCurrentLimitAmps` | `60` | Supporting shooter smart limit |
+| `kSupportingShooterTargetVelocityRotationsPerSecond` | `60.0` | Supporting shooter speed ($\approx 3600\text{ RPM}$) |
 
 ---
 

@@ -107,12 +107,11 @@ public final class Constants {
   }
 
   public static final class ShooterConstants {
-    // ─── Flywheel Motors (5x Kraken X60 on TalonFX) ───────────────────────────
+    // ─── Flywheel Motors (4x Kraken X60 on TalonFX) ───────────────────────────
     public static final int kFlywheelLeaderMotorId = 35;
     public static final int kFlywheelFollower1MotorId = 36;
     public static final int kFlywheelFollower2MotorId = 38;
     public static final int kFlywheelFollower3MotorId = 39;
-    public static final int kFlywheelFollower4MotorId = 37;
     public static final int kFlywheelFollowerMotorId = kFlywheelFollower1MotorId; // alias
     public static final double kFlywheelGearRatio = 1.0;
 
@@ -132,23 +131,18 @@ public final class Constants {
     public static final double kFlywheelIdleVelocityRotationsPerSecond = 20.0; // ~1200 RPM idle spool
     public static final double kFlywheelToleranceRotationsPerSecond = 2.5; // (150 RPM)
 
-
-    // ─── Hood Motor (NEO Vortex on SPARK MAX) ────────────────────────────────
-    public static final int kHoodMotorId = 42;
+    // ─── Hood Motor (Kraken X60 on TalonFX) ───────────────────────────────────
+    public static final int kHoodMotorId = 37;
     public static final double kHoodGearRatio = 1.0;
 
     public static final double kHoodMinAngleRadians = Math.toRadians(0.0);
     public static final double kHoodMaxAngleRadians = Math.toRadians(60.0);
 
-    // NEO Vortex / SPARK MAX Current Limits & Voltage Compensation
-    public static final int kHoodSmartCurrentLimitAmps = 40;
-    public static final double kHoodVoltageCompensationVolts = 12.0;
-
-    // Legacy Kraken Current Limits
+    // Kraken X60 Hood Current Limits (Stator: 40A position holding, Supply: 40A breaker protection)
     public static final double kHoodStatorCurrentLimitAmps = 40.0;
     public static final double kHoodSupplyCurrentLimitAmps = 40.0;
 
-    // Hood Position Closed-Loop PID Gains
+    // Hood Position Closed-Loop PID Gains (Slot 0 on TalonFX)
     public static final double kHoodProportionalGain = 2.5;
     public static final double kHoodIntegralGain = 0.0;
     public static final double kHoodDerivativeGain = 0.0;
@@ -156,6 +150,19 @@ public final class Constants {
 
     // Hood Angle Preset Targets
     public static final double kHoodStowAngleRadians = Math.toRadians(0.0);
+
+    // ─── Supporting Shooter Motor (1x NEO Vortex on SPARK MAX) ────────────────
+    public static final int kSupportingShooterMotorId = 42;
+    public static final double kSupportingShooterGearRatio = 1.0;
+
+    public static final int kSupportingShooterSmartCurrentLimitAmps = 60;
+    public static final double kSupportingShooterVoltageCompensationVolts = 12.0;
+
+    public static final double kSupportingShooterTargetVelocityRotationsPerSecond = 60.0; // ~3600 RPM
+    public static final double kSupportingShooterVelocityGain = 0.12; // Volts per RPS feedforward
+    public static final double kSupportingShooterStaticGain = 0.25;   // Volts
+    public static final double kSupportingShooterProportionalGain = 0.1;
+    public static final double kSupportingShooterToleranceRotationsPerSecond = 3.0;
   }
 
   public static final class AutoAimConstants {

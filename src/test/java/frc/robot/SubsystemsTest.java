@@ -255,9 +255,13 @@ public class SubsystemsTest {
     shooter.prepareShot(70.0, Math.toRadians(35.0));
     assertEquals(70.0, shooter.getTargetFlywheelVelocityRotationsPerSecond());
     assertEquals(Math.toRadians(35.0), shooter.getTargetHoodAngleRadians());
+    assertEquals(
+        Constants.ShooterConstants.kSupportingShooterTargetVelocityRotationsPerSecond,
+        shooter.getTargetSupportingShooterVelocityRotationsPerSecond());
     shooter.periodic();
     shooter.stop();
     assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond());
+    assertEquals(0.0, shooter.getTargetSupportingShooterVelocityRotationsPerSecond());
   }
 
   @Test
@@ -267,6 +271,7 @@ public class SubsystemsTest {
 
     shooter.setFlywheelVelocity(0.0);
     shooter.setHoodAngle(0.0);
+    shooter.stopSupportingShooter();
     shooter.periodic();
     // At zero target speed, atTargetFlywheelSpeed is false
     assertFalse(shooter.isReadyToShoot());
@@ -298,6 +303,41 @@ public class SubsystemsTest {
 
     // Sequential intake command
     assertNotNull(superstructure.intakeSequenceCommand());
+  }
+
+  @Test
+  public void testAutoAimDoesNotCommandArm() {
+    Arm arm = new Arm(new ArmIOSim());
+    Sequencer sequencer = new Sequencer(new SequencerIOSim());
+    Roller roller = new Roller(new RollerIOSim());
+    Shooter shooter = new Shooter(new ShooterIOSim());
+    SwerveDrive swerve =
+        new SwerveDrive(
+            new GyroIOSim(),
+            new SwerveModuleIOSim(),
+            new SwerveModuleIOSim(),
+            new SwerveModuleIOSim(),
+            new SwerveModuleIOSim());
+
+    Superstructure superstructure = new Superstructure(sequencer, arm, roller, shooter);
+
+    // Arm starts at stow (0 rad)
+    arm.setGoal(0.0);
+    double initialArmGoal = arm.getGoalAngleRadians();
+
+    var autoAimCmd = superstructure.autoAimAndShootCommand(swerve, () -> 0.0, () -> 0.0);
+    assertNotNull(autoAimCmd);
+
+    // Initialize and execute one step of autoaim
+    autoAimCmd.initialize();
+    autoAimCmd.execute();
+
+    // Verify arm goal was NOT altered by autoaim
+    assertEquals(initialArmGoal, arm.getGoalAngleRadians(), 1e-4, "Arm goal should remain untouched during autoaim");
+
+    // End/interrupt autoaim
+    autoAimCmd.end(false);
+    assertEquals(initialArmGoal, arm.getGoalAngleRadians(), 1e-4, "Arm goal should remain untouched when autoaim ends");
   }
 
   @Test
@@ -359,30 +399,33 @@ public class SubsystemsTest {
   }
 
   @Test
-  public void testShooter5FlywheelsAndNeoVortexHoodSim() {
+  public void testShooter6MotorsSim() {
     ShooterIOSim simIO = new ShooterIOSim();
     ShooterIO.ShooterIOInputs inputs = new ShooterIO.ShooterIOInputs();
 
     simIO.setFlywheelVelocity(70.0);
     simIO.setHoodAngle(Math.toRadians(45.0));
+    simIO.setSupportingShooterVelocity(60.0);
     simIO.updateInputs(inputs);
 
     assertEquals(70.0, inputs.flywheelTargetVelocityRotationsPerSecond, 1e-4);
     assertEquals(Math.toRadians(45.0), inputs.hoodTargetAngleRadians, 1e-4);
-    assertTrue(inputs.flywheelFollower4CurrentAmps >= 0.0);
-    assertEquals(inputs.flywheelLeaderCurrentAmps, inputs.flywheelFollower4CurrentAmps, 1e-4);
+    assertEquals(60.0, inputs.supportingShooterTargetVelocityRotationsPerSecond, 1e-4);
+    assertTrue(inputs.flywheelFollower3CurrentAmps >= 0.0);
+    assertEquals(inputs.flywheelLeaderCurrentAmps, inputs.flywheelFollower3CurrentAmps, 1e-4);
+    assertTrue(inputs.supportingShooterCurrentAmps >= 0.0);
   }
 
   @Test
   public void testShooterIOHardwareConstructors() {
-    // 6-motor constructor
+    // 6-motor constructor (4 flywheels + 1 hood + 1 supporting shooter)
     var hw6 = new frc.robot.subsystems.shooter.ShooterIOHardware(
         Constants.ShooterConstants.kFlywheelLeaderMotorId,
         Constants.ShooterConstants.kFlywheelFollower1MotorId,
         Constants.ShooterConstants.kFlywheelFollower2MotorId,
         Constants.ShooterConstants.kFlywheelFollower3MotorId,
-        Constants.ShooterConstants.kFlywheelFollower4MotorId,
-        Constants.ShooterConstants.kHoodMotorId);
+        Constants.ShooterConstants.kHoodMotorId,
+        Constants.ShooterConstants.kSupportingShooterMotorId);
     assertNotNull(hw6);
     hw6.close();
 
@@ -392,8 +435,10 @@ public class SubsystemsTest {
 
     hwDef.setFlywheelVoltage(6.0);
     hwDef.setHoodVoltage(6.0);
+    hwDef.setSupportingShooterVoltage(6.0);
     hwDef.stopFlywheel();
     hwDef.stopHood();
+    hwDef.stopSupportingShooter();
     hwDef.resetHoodEncoder();
 
     hwDef.updateInputs(null);

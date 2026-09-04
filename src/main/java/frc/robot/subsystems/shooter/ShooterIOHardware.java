@@ -7,6 +7,7 @@ package frc.robot.subsystems.shooter;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -16,8 +17,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
-import com.revrobotics.spark.SparkBase.ControlType;
-import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -29,28 +28,33 @@ import frc.robot.Constants.ShooterConstants;
 /**
  * Complete hardware IO implementation for the Shooter subsystem featuring strictly 6 motors:
  * <ul>
- *   <li><b>5x Kraken X60 (TalonFX) Flywheels</b>: 1 Leader + 4 Followers on CANivore/RIO CAN bus.</li>
- *   <li><b>1x NEO Vortex (SPARK MAX) Adjustable Hood</b>: Precision position control.</li>
+ *   <li><b>4x Kraken X60 (TalonFX) Flywheels</b>: 1 Leader + 3 Followers on CANivore/RIO CAN bus.</li>
+ *   <li><b>1x Kraken X60 (TalonFX) Adjustable Hood</b>: CAN ID 37 with closed-loop PositionVoltage.</li>
+ *   <li><b>1x REV NEO Vortex (SPARK MAX) Supporting Shooter</b>: CAN ID 42 kicker/supporting roller.</li>
  * </ul>
  */
 public class ShooterIOHardware implements ShooterIO, AutoCloseable {
-  // ── Flywheel Motors (5x Kraken X60) ─────────────────────────────────────────
+  // ── Flywheel Motors (4x Kraken X60 on TalonFX) ──────────────────────────────
   private final TalonFX m_flywheelLeader;
   private final TalonFX m_flywheelFollower1;
   private final TalonFX m_flywheelFollower2;
   private final TalonFX m_flywheelFollower3;
-  private final TalonFX m_flywheelFollower4;
 
   private final VelocityVoltage m_flywheelVelocityControl = new VelocityVoltage(0.0).withEnableFOC(true);
   private final VoltageOut m_flywheelVoltageControl = new VoltageOut(0.0).withEnableFOC(true);
 
-  // ── Hood Motor (1x NEO Vortex on SPARK MAX) ─────────────────────────────────
-  private final SparkMax m_hoodMotor;
-  private final RelativeEncoder m_hoodEncoder;
-  private final SparkClosedLoopController m_hoodClosedLoopController;
+  // ── Hood Motor (1x Kraken X60 on TalonFX) ───────────────────────────────────
+  private final TalonFX m_hoodMotor;
+  private final PositionVoltage m_hoodPositionControl = new PositionVoltage(0.0).withEnableFOC(true);
+  private final VoltageOut m_hoodVoltageControl = new VoltageOut(0.0).withEnableFOC(true);
+
+  // ── Supporting Shooter (1x NEO Vortex on SPARK MAX) ─────────────────────────
+  private final SparkMax m_supportingShooterMotor;
+  private final RelativeEncoder m_supportingShooterEncoder;
 
   private double m_flywheelTargetVelocityRotationsPerSecond = 0.0;
   private double m_hoodTargetAngleRadians = 0.0;
+  private double m_supportingShooterTargetVelocityRotationsPerSecond = 0.0;
 
   /**
    * Constructs a ShooterIOHardware instance with all 6 configured motors.
@@ -59,25 +63,24 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
    * @param flywheelFollower1CanId CAN ID of the 1st follower flywheel Kraken X60.
    * @param flywheelFollower2CanId CAN ID of the 2nd follower flywheel Kraken X60.
    * @param flywheelFollower3CanId CAN ID of the 3rd follower flywheel Kraken X60.
-   * @param flywheelFollower4CanId CAN ID of the 4th follower flywheel Kraken X60.
-   * @param hoodMotorCanId CAN ID of the adjustable hood SPARK MAX controller.
+   * @param hoodMotorCanId CAN ID of the adjustable hood Kraken X60 (TalonFX).
+   * @param supportingShooterCanId CAN ID of the supporting shooter NEO Vortex (SPARK MAX).
    */
   public ShooterIOHardware(
       int flywheelLeaderCanId,
       int flywheelFollower1CanId,
       int flywheelFollower2CanId,
       int flywheelFollower3CanId,
-      int flywheelFollower4CanId,
-      int hoodMotorCanId) {
+      int hoodMotorCanId,
+      int supportingShooterCanId) {
 
     CANBus canbus = new CANBus(Constants.kCANBusName);
 
-    // ── 1. Flywheel 5-Kraken Array ──────────────────────────────────────────
+    // ── 1. Flywheel 4-Kraken Array ──────────────────────────────────────────
     m_flywheelLeader = new TalonFX(flywheelLeaderCanId, canbus);
     m_flywheelFollower1 = new TalonFX(flywheelFollower1CanId, canbus);
     m_flywheelFollower2 = new TalonFX(flywheelFollower2CanId, canbus);
     m_flywheelFollower3 = new TalonFX(flywheelFollower3CanId, canbus);
-    m_flywheelFollower4 = new TalonFX(flywheelFollower4CanId, canbus);
 
     TalonFXConfiguration flywheelLeaderConfig = new TalonFXConfiguration();
     flywheelLeaderConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
@@ -120,31 +123,35 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
     m_flywheelFollower3.setControl(
         new Follower(flywheelLeaderCanId, MotorAlignmentValue.Opposed));
 
-    m_flywheelFollower4.getConfigurator().apply(followerConfig);
-    m_flywheelFollower4.setControl(
-        new Follower(flywheelLeaderCanId, MotorAlignmentValue.Aligned));
+    // ── 2. Adjustable Hood (Kraken X60 on TalonFX) ───────────────────────────
+    m_hoodMotor = new TalonFX(hoodMotorCanId, canbus);
 
-    // ── 2. Adjustable Hood (NEO Vortex on SPARK MAX) ─────────────────────────
-    m_hoodMotor = new SparkMax(hoodMotorCanId, MotorType.kBrushless);
-    m_hoodEncoder = m_hoodMotor.getEncoder();
-    m_hoodClosedLoopController = m_hoodMotor.getClosedLoopController();
+    TalonFXConfiguration hoodConfig = new TalonFXConfiguration();
+    hoodConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    hoodConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    SparkMaxConfig hoodConfig = new SparkMaxConfig();
-    hoodConfig.idleMode(IdleMode.kBrake);
-    hoodConfig.smartCurrentLimit(ShooterConstants.kHoodSmartCurrentLimitAmps);
-    hoodConfig.voltageCompensation(ShooterConstants.kHoodVoltageCompensationVolts);
+    hoodConfig.CurrentLimits.StatorCurrentLimit = ShooterConstants.kHoodStatorCurrentLimitAmps;
+    hoodConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    hoodConfig.CurrentLimits.SupplyCurrentLimit = ShooterConstants.kHoodSupplyCurrentLimitAmps;
+    hoodConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
 
-    // Position factor: rotations -> mechanism radians (2π / gearRatio)
-    hoodConfig.encoder.positionConversionFactor((2.0 * Math.PI) / ShooterConstants.kHoodGearRatio);
-    // Velocity factor: RPM -> mechanism radians/second ((2π / gearRatio) / 60)
-    hoodConfig.encoder.velocityConversionFactor(((2.0 * Math.PI) / ShooterConstants.kHoodGearRatio) / 60.0);
+    hoodConfig.Slot0.kP = ShooterConstants.kHoodProportionalGain;
+    hoodConfig.Slot0.kI = ShooterConstants.kHoodIntegralGain;
+    hoodConfig.Slot0.kD = ShooterConstants.kHoodDerivativeGain;
 
-    hoodConfig.closedLoop.pid(
-        ShooterConstants.kHoodProportionalGain,
-        ShooterConstants.kHoodIntegralGain,
-        ShooterConstants.kHoodDerivativeGain);
+    m_hoodMotor.getConfigurator().apply(hoodConfig);
 
-    m_hoodMotor.configure(hoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    // ── 3. Supporting Shooter (1x NEO Vortex on SPARK MAX) ───────────────────
+    m_supportingShooterMotor = new SparkMax(supportingShooterCanId, MotorType.kBrushless);
+    m_supportingShooterEncoder = m_supportingShooterMotor.getEncoder();
+
+    SparkMaxConfig supportingConfig = new SparkMaxConfig();
+    supportingConfig.idleMode(IdleMode.kCoast);
+    supportingConfig.smartCurrentLimit(ShooterConstants.kSupportingShooterSmartCurrentLimitAmps);
+    supportingConfig.voltageCompensation(ShooterConstants.kSupportingShooterVoltageCompensationVolts);
+
+    m_supportingShooterMotor.configure(
+        supportingConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   /** Convenience constructor using defaults from ShooterConstants. */
@@ -154,8 +161,8 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
         ShooterConstants.kFlywheelFollower1MotorId,
         ShooterConstants.kFlywheelFollower2MotorId,
         ShooterConstants.kFlywheelFollower3MotorId,
-        ShooterConstants.kFlywheelFollower4MotorId,
-        ShooterConstants.kHoodMotorId);
+        ShooterConstants.kHoodMotorId,
+        ShooterConstants.kSupportingShooterMotorId);
   }
 
   @Override
@@ -163,7 +170,7 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
     if (inputs == null) {
       return;
     }
-    // Flywheel inputs
+    // Flywheel inputs (4 Krakens)
     inputs.flywheelVelocityRotationsPerSecond = m_flywheelLeader.getVelocity().getValueAsDouble();
     inputs.flywheelTargetVelocityRotationsPerSecond = m_flywheelTargetVelocityRotationsPerSecond;
     inputs.flywheelAppliedVolts = m_flywheelLeader.getMotorVoltage().getValueAsDouble();
@@ -172,13 +179,20 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
     inputs.flywheelFollowerCurrentAmps = inputs.flywheelFollower1CurrentAmps;
     inputs.flywheelFollower2CurrentAmps = m_flywheelFollower2.getStatorCurrent().getValueAsDouble();
     inputs.flywheelFollower3CurrentAmps = m_flywheelFollower3.getStatorCurrent().getValueAsDouble();
-    inputs.flywheelFollower4CurrentAmps = m_flywheelFollower4.getStatorCurrent().getValueAsDouble();
 
-    // Hood inputs
-    inputs.hoodAngleRadians = m_hoodEncoder.getPosition();
+    // Hood inputs (Kraken X60)
+    double motorRotations = m_hoodMotor.getPosition().getValueAsDouble();
+    inputs.hoodAngleRadians = (motorRotations / ShooterConstants.kHoodGearRatio) * (2.0 * Math.PI);
     inputs.hoodTargetAngleRadians = m_hoodTargetAngleRadians;
-    inputs.hoodAppliedVolts = m_hoodMotor.getAppliedOutput() * m_hoodMotor.getBusVoltage();
-    inputs.hoodCurrentAmps = m_hoodMotor.getOutputCurrent();
+    inputs.hoodAppliedVolts = m_hoodMotor.getMotorVoltage().getValueAsDouble();
+    inputs.hoodCurrentAmps = m_hoodMotor.getStatorCurrent().getValueAsDouble();
+
+    // Supporting Shooter inputs (NEO Vortex)
+    inputs.supportingShooterVelocityRotationsPerSecond = m_supportingShooterEncoder.getVelocity() / 60.0;
+    inputs.supportingShooterTargetVelocityRotationsPerSecond = m_supportingShooterTargetVelocityRotationsPerSecond;
+    inputs.supportingShooterAppliedVolts =
+        m_supportingShooterMotor.getAppliedOutput() * m_supportingShooterMotor.getBusVoltage();
+    inputs.supportingShooterCurrentAmps = m_supportingShooterMotor.getOutputCurrent();
   }
 
   // ── Flywheel Control ───────────────────────────────────────────────────────
@@ -203,7 +217,7 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
     m_flywheelLeader.stopMotor();
   }
 
-  // ── Hood Control ───────────────────────────────────────────────────────────
+  // ── Hood Control (Kraken X60 PositionVoltage) ──────────────────────────────
 
   @Override
   public void setHoodAngle(double angleRadians) {
@@ -212,13 +226,15 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
             angleRadians,
             ShooterConstants.kHoodMinAngleRadians,
             ShooterConstants.kHoodMaxAngleRadians);
-    m_hoodClosedLoopController.setSetpoint(m_hoodTargetAngleRadians, ControlType.kPosition);
+    double motorRotations =
+        (m_hoodTargetAngleRadians / (2.0 * Math.PI)) * ShooterConstants.kHoodGearRatio;
+    m_hoodMotor.setControl(m_hoodPositionControl.withPosition(motorRotations));
   }
 
   @Override
   public void setHoodVoltage(double appliedVolts) {
     double clampedVolts = MathUtil.clamp(appliedVolts, -12.0, 12.0);
-    m_hoodMotor.setVoltage(clampedVolts);
+    m_hoodMotor.setControl(m_hoodVoltageControl.withOutput(clampedVolts));
   }
 
   @Override
@@ -228,11 +244,42 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
 
   @Override
   public void resetHoodEncoder() {
-    m_hoodEncoder.setPosition(0.0);
+    m_hoodMotor.setPosition(0.0);
+  }
+
+  // ── Supporting Shooter Control (NEO Vortex SPARK MAX) ───────────────────────
+
+  @Override
+  public void setSupportingShooterVelocity(double velocityRotationsPerSecond) {
+    m_supportingShooterTargetVelocityRotationsPerSecond = velocityRotationsPerSecond;
+    if (Math.abs(velocityRotationsPerSecond) < 1e-4) {
+      stopSupportingShooter();
+      return;
+    }
+    double feedforwardVolts =
+        velocityRotationsPerSecond * ShooterConstants.kSupportingShooterVelocityGain
+            + Math.signum(velocityRotationsPerSecond) * ShooterConstants.kSupportingShooterStaticGain;
+    setSupportingShooterVoltage(feedforwardVolts);
+  }
+
+  @Override
+  public void setSupportingShooterVoltage(double appliedVolts) {
+    if (!Double.isFinite(appliedVolts)) {
+      m_supportingShooterMotor.setVoltage(0.0);
+      return;
+    }
+    double clampedVolts = MathUtil.clamp(appliedVolts, -12.0, 12.0);
+    m_supportingShooterMotor.setVoltage(clampedVolts);
+  }
+
+  @Override
+  public void stopSupportingShooter() {
+    m_supportingShooterTargetVelocityRotationsPerSecond = 0.0;
+    m_supportingShooterMotor.stopMotor();
   }
 
   @Override
   public void close() {
-    m_hoodMotor.close();
+    m_supportingShooterMotor.close();
   }
 }

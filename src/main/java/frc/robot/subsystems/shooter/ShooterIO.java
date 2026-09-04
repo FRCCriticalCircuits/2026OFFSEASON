@@ -35,10 +35,7 @@ public interface ShooterIO {
     /** Stator current drawn by the follower 3 flywheel motor (amps). */
     public double flywheelFollower3CurrentAmps = 0.0;
 
-    /** Stator current drawn by the follower 4 flywheel motor (amps). */
-    public double flywheelFollower4CurrentAmps = 0.0;
-
-    // ── Hood ────────────────────────────────────────────────────────────────
+    // ── Hood (Kraken X60) ───────────────────────────────────────────────────
     /** Current hood angle in radians. */
     public double hoodAngleRadians = 0.0;
 
@@ -50,6 +47,19 @@ public interface ShooterIO {
 
     /** Stator current drawn by the hood motor (amps). */
     public double hoodCurrentAmps = 0.0;
+
+    // ── Supporting Shooter (1x NEO Vortex on SPARK MAX) ─────────────────────
+    /** Current supporting shooter rotational velocity in rotations per second. */
+    public double supportingShooterVelocityRotationsPerSecond = 0.0;
+
+    /** Desired/target supporting shooter velocity in rotations per second. */
+    public double supportingShooterTargetVelocityRotationsPerSecond = 0.0;
+
+    /** Applied voltage to the supporting shooter motor (volts). */
+    public double supportingShooterAppliedVolts = 0.0;
+
+    /** Output/stator current drawn by the supporting shooter motor (amps). */
+    public double supportingShooterCurrentAmps = 0.0;
   }
 
   /**
@@ -76,7 +86,6 @@ public interface ShooterIO {
   /** Stops the flywheel. */
   default void stopFlywheel() {}
 
-
   /**
    * Commands the hood motor to target angle in radians.
    *
@@ -96,4 +105,21 @@ public interface ShooterIO {
 
   /** Resets the hood encoder position to 0.0. */
   default void resetHoodEncoder() {}
+
+  /**
+   * Commands the supporting shooter to closed-loop velocity setpoint.
+   *
+   * @param velocityRotationsPerSecond target velocity in rotations per second
+   */
+  default void setSupportingShooterVelocity(double velocityRotationsPerSecond) {}
+
+  /**
+   * Commands the supporting shooter motor with raw voltage.
+   *
+   * @param appliedVolts voltage to apply (-12.0 to 12.0)
+   */
+  default void setSupportingShooterVoltage(double appliedVolts) {}
+
+  /** Stops the supporting shooter motor. */
+  default void stopSupportingShooter() {}
 }
