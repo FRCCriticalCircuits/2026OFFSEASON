@@ -87,6 +87,21 @@ public class Superstructure extends SubsystemBase {
    * 3. Runs the roller to intake balls while held.
    * 4. Automatically returns arm to STOW and stops the roller on release.
    */
+
+  public Command Temp_intakeCommand()
+  {
+    return Commands.sequence(
+      Commands.runOnce(() -> {
+        m_arm.setGoal(Math.toRadians(15));
+        m_roller.runIntake();
+      }, this)
+    ).finallyDo(
+        () -> {
+        m_arm.setGoal(Math.toRadians(0));
+        m_roller.stop();
+        }
+      ).withName("Manual Intake");
+  }
   public Command intakeSequenceCommand() {
     return Commands.sequence(
         // Step 1: Move arm to ground target angle while roller and sequencer are stopped
