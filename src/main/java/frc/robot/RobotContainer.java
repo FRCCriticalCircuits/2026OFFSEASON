@@ -21,6 +21,7 @@ import frc.robot.Constants.SwerveConstants;
 import frc.robot.subsystems.arm.Arm;
 import frc.robot.subsystems.arm.ArmIOKraken;
 import frc.robot.subsystems.arm.ArmIOSparkFlex;
+import frc.robot.subsystems.arm.ArmIOSparkMax;
 import frc.robot.subsystems.arm.ArmIOSim;
 import frc.robot.subsystems.roller.Roller;
 import frc.robot.subsystems.roller.RollerIOKraken;
@@ -28,6 +29,7 @@ import frc.robot.subsystems.roller.RollerIOSim;
 import frc.robot.subsystems.sequencer.Sequencer;
 import frc.robot.subsystems.sequencer.SequencerIOKraken;
 import frc.robot.subsystems.sequencer.SequencerIOSparkFlex;
+import frc.robot.subsystems.sequencer.SequencerIOSparkMax;
 import frc.robot.subsystems.sequencer.SequencerIOSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIOHardware;
@@ -71,10 +73,10 @@ public class RobotContainer {
     if (RobotBase.isReal()) {
       m_sequencer =
           new Sequencer(
-              new SequencerIOSparkFlex(
+              new SequencerIOSparkMax(
                   SequencerConstants.kLeaderMotorId,
                   SequencerConstants.kFollowerMotorId));
-      m_arm = new Arm(new ArmIOSparkFlex(ArmConstants.kMotorId));
+      m_arm = new Arm(new ArmIOSparkMax(ArmConstants.kMotorId));
       m_roller =
           new Roller(
               new RollerIOKraken(
@@ -87,9 +89,8 @@ public class RobotContainer {
                   ShooterConstants.kFlywheelFollower1MotorId,
                   ShooterConstants.kFlywheelFollower2MotorId,
                   ShooterConstants.kFlywheelFollower3MotorId,
-                  ShooterConstants.kHoodMotorId,
-                  ShooterConstants.kAcceleratorLeaderMotorId,
-                  ShooterConstants.kAcceleratorFollowerMotorId));
+                  ShooterConstants.kFlywheelFollower4MotorId,
+                  ShooterConstants.kHoodMotorId));
       m_swerveDrive =
           new SwerveDrive(
               new GyroIOPigeon2(SwerveConstants.kPigeon2CanId),

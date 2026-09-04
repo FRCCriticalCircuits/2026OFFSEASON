@@ -30,8 +30,8 @@ public class SwerveModuleIOSim implements SwerveModuleIO {
     m_steerSimulation =
         new FlywheelSim(
             LinearSystemId.createFlywheelSystem(
-                DCMotor.getKrakenX60(1), 0.004, SwerveConstants.kSteerGearRatio),
-            DCMotor.getKrakenX60(1));
+                DCMotor.getKrakenX44(1), 0.004, SwerveConstants.kSteerGearRatio),
+            DCMotor.getKrakenX44(1));
   }
 
   @Override

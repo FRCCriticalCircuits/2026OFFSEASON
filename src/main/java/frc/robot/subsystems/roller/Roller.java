@@ -124,6 +124,9 @@ public class Roller extends SubsystemBase {
 
   @Override
   public void periodic() {
+    if (m_rollerIO == null) {
+      return;
+    }
     m_rollerIO.updateInputs(m_inputs);
 
     SmartDashboard.putNumber("Roller/Velocity (RPS)", m_inputs.velocityRotationsPerSecond);

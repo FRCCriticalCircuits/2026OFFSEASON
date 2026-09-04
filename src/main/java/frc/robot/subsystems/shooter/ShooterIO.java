@@ -35,21 +35,8 @@ public interface ShooterIO {
     /** Stator current drawn by the follower 3 flywheel motor (amps). */
     public double flywheelFollower3CurrentAmps = 0.0;
 
-    // ── Accelerator / Kicker (2x NEO Vortex on SPARK Flex) ──────────────────
-    /** Current accelerator rotational velocity in rotations per second. */
-    public double acceleratorVelocityRotationsPerSecond = 0.0;
-
-    /** Desired/target accelerator velocity in rotations per second. */
-    public double acceleratorTargetVelocityRotationsPerSecond = 0.0;
-
-    /** Applied voltage to the accelerator motors (volts). */
-    public double acceleratorAppliedVolts = 0.0;
-
-    /** Current drawn by the leader accelerator motor (amps). */
-    public double acceleratorLeaderCurrentAmps = 0.0;
-
-    /** Current drawn by the follower accelerator motor (amps). */
-    public double acceleratorFollowerCurrentAmps = 0.0;
+    /** Stator current drawn by the follower 4 flywheel motor (amps). */
+    public double flywheelFollower4CurrentAmps = 0.0;
 
     // ── Hood ────────────────────────────────────────────────────────────────
     /** Current hood angle in radians. */
@@ -89,22 +76,6 @@ public interface ShooterIO {
   /** Stops the flywheel. */
   default void stopFlywheel() {}
 
-  /**
-   * Commands the accelerator motors to closed-loop velocity setpoint.
-   *
-   * @param velocityRotationsPerSecond target velocity in rotations per second
-   */
-  default void setAcceleratorVelocity(double velocityRotationsPerSecond) {}
-
-  /**
-   * Commands the accelerator motors with raw voltage (open-loop).
-   *
-   * @param appliedVolts voltage to apply (-12.0 to 12.0)
-   */
-  default void setAcceleratorVoltage(double appliedVolts) {}
-
-  /** Stops the accelerator. */
-  default void stopAccelerator() {}
 
   /**
    * Commands the hood motor to target angle in radians.

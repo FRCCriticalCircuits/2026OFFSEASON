@@ -26,7 +26,7 @@ public final class Constants {
   }
 
   public static final class ArmConstants {
-    // CAN ID (Intake Pivot / Deploy Motor: NEO Vortex on SPARK Flex)
+    // CAN ID (Intake Pivot / Deploy Motor: NEO Vortex on SPARK MAX)
     public static final int kMotorId = 30;
 
     // Physical Constants
@@ -36,7 +36,7 @@ public final class Constants {
     public static final double kMinAngleRadians = Math.toRadians(-90.0);
     public static final double kMaxAngleRadians = Math.toRadians(90.0);
 
-    // NEO Vortex / SPARK Flex Current Limits
+    // NEO Vortex / SPARK MAX Current Limits
     public static final int kSmartCurrentLimitAmps = 60;
     public static final double kVoltageCompensationVolts = 12.0;
 
@@ -79,7 +79,7 @@ public final class Constants {
   }
 
   public static final class SequencerConstants {
-    // CAN IDs (Dual Feeder Motors: NEO Vortex on SPARK Flex)
+    // CAN IDs (Dual Feeder Motors: NEO Vortex on SPARK MAX)
     public static final int kLeaderMotorId = 33;
     public static final int kFollowerMotorId = 34;
     public static final int kMotorId = kLeaderMotorId;
@@ -88,7 +88,7 @@ public final class Constants {
     // Physical Constants
     public static final double kGearRatio = 1.0;
 
-    // NEO Vortex / SPARK Flex Current Limits
+    // NEO Vortex / SPARK MAX Current Limits
     public static final int kSmartCurrentLimitAmps = 60;
     public static final double kVoltageCompensationVolts = 12.0;
 
@@ -107,11 +107,12 @@ public final class Constants {
   }
 
   public static final class ShooterConstants {
-    // ─── Flywheel Motors (4x Kraken X60 on TalonFX) ───────────────────────────
+    // ─── Flywheel Motors (5x Kraken X60 on TalonFX) ───────────────────────────
     public static final int kFlywheelLeaderMotorId = 35;
     public static final int kFlywheelFollower1MotorId = 36;
     public static final int kFlywheelFollower2MotorId = 38;
     public static final int kFlywheelFollower3MotorId = 39;
+    public static final int kFlywheelFollower4MotorId = 37;
     public static final int kFlywheelFollowerMotorId = kFlywheelFollower1MotorId; // alias
     public static final double kFlywheelGearRatio = 1.0;
 
@@ -131,30 +132,24 @@ public final class Constants {
     public static final double kFlywheelIdleVelocityRotationsPerSecond = 20.0; // ~1200 RPM idle spool
     public static final double kFlywheelToleranceRotationsPerSecond = 2.5; // (150 RPM)
 
-    // ─── Accelerator / Kicker Motors (2x NEO Vortex on SPARK Flex) ───────────
-    public static final int kAcceleratorLeaderMotorId = 40;
-    public static final int kAcceleratorFollowerMotorId = 41;
-    public static final boolean kAcceleratorFollowerInverted = true;
-    public static final int kAcceleratorSmartCurrentLimitAmps = 60;
-    public static final double kAcceleratorVoltageCompensationVolts = 12.0;
 
-    public static final double kAcceleratorTargetVelocityRotationsPerSecond = 60.0; // ~3600 RPM
-    public static final double kAcceleratorVelocityGain = 0.12; // Volts per RPS feedforward
-    public static final double kAcceleratorProportionalGain = 0.1;
-    public static final double kAcceleratorToleranceRotationsPerSecond = 3.0;
-
-    // ─── Hood Motor (Kraken X44 / X60) ───────────────────────────────────────
-    public static final int kHoodMotorId = 37;
+    // ─── Hood Motor (NEO Vortex on SPARK MAX) ────────────────────────────────
+    public static final int kHoodMotorId = 42;
     public static final double kHoodGearRatio = 1.0;
 
     public static final double kHoodMinAngleRadians = Math.toRadians(0.0);
     public static final double kHoodMaxAngleRadians = Math.toRadians(60.0);
 
+    // NEO Vortex / SPARK MAX Current Limits & Voltage Compensation
+    public static final int kHoodSmartCurrentLimitAmps = 40;
+    public static final double kHoodVoltageCompensationVolts = 12.0;
+
+    // Legacy Kraken Current Limits
     public static final double kHoodStatorCurrentLimitAmps = 40.0;
     public static final double kHoodSupplyCurrentLimitAmps = 40.0;
 
-    // Hood Position Closed-Loop PID Gains (Slot 0 on Kraken X44/X60 TalonFX)
-    public static final double kHoodProportionalGain = 20.0;
+    // Hood Position Closed-Loop PID Gains
+    public static final double kHoodProportionalGain = 2.5;
     public static final double kHoodIntegralGain = 0.0;
     public static final double kHoodDerivativeGain = 0.0;
     public static final double kHoodToleranceRadians = Math.toRadians(1.0);
@@ -213,9 +208,9 @@ public final class Constants {
     public static final double kDriveStatorCurrentLimitAmps = 120.0;
     public static final double kDriveSupplyCurrentLimitAmps = 60.0;
 
-    // ─── Steer Motor Current Limits ──────────────────────────────────────────
-    public static final double kSteerStatorCurrentLimitAmps = 60.0;
-    public static final double kSteerSupplyCurrentLimitAmps = 40.0;
+    // ─── Steer Motor Current Limits (Kraken X44) ────────────────────────────
+    public static final double kSteerStatorCurrentLimitAmps = 40.0;
+    public static final double kSteerSupplyCurrentLimitAmps = 30.0;
 
     // ─── Drive Motor PID Gains ───────────────────────────────────────────────
     public static final double kDriveProportionalGain = 0.05;

@@ -60,7 +60,7 @@ public class SwerveModuleIOKraken implements SwerveModuleIO {
     TalonFXConfiguration steerConfiguration = new TalonFXConfiguration();
     steerConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     steerConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    // Standard Kraken X60 Steer current limits (Stator: 60A azimuth control limit, Supply: 40A breaker protection)
+    // Standard Kraken X44 Steer current limits (Stator: 40A azimuth control limit, Supply: 30A breaker protection)
     steerConfiguration.CurrentLimits.StatorCurrentLimit =
         SwerveConstants.kSteerStatorCurrentLimitAmps;
     steerConfiguration.CurrentLimits.StatorCurrentLimitEnable = true;

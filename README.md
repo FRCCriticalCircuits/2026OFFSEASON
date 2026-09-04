@@ -133,26 +133,24 @@ When holding the **Right Trigger**:
 - **Current Limits**: $60\text{ A}$ smart current limit, $12\text{ V}$ voltage compensation, brake mode.
 - **Role**: Continuously spins forward to feed all staged balls directly into the shooter accelerator and flywheel.
 
-### 5. Shooter (Flywheel + Accelerator + Adjustable Hood)
-- **Hardware**:
-  - **4-Motor Flywheel Array**: 4x Kraken X60 (TalonFX) (`kFlywheelLeaderMotorId = 35`, `kFlywheelFollower1MotorId = 36`, `kFlywheelFollower2MotorId = 38`, `kFlywheelFollower3MotorId = 39`) in leader-follower configuration. Current limits: $80\text{ A}$ stator / $60\text{ A}$ supply.
-  - **Dual Accelerator / Kicker**: 2x NEO Vortex brushless motors with SPARK Flex controllers (`kAcceleratorLeaderMotorId = 40`, `kAcceleratorFollowerMotorId = 41`). Current limits: $60\text{ A}$ smart current limit.
-  - **Adjustable Hood Motor**: 1x Kraken X60 (TalonFX) (`kHoodMotorId = 37`) for precision trajectory control ($0^\circ$ to $60^\circ$). Current limits: $40\text{ A}$ stator / $40\text{ A}$ supply.
+### 5. Shooter (Flywheel + Adjustable Hood)
+- **Hardware (6 Motors Total)**:
+  - **5-Motor Flywheel Array**: 5x Kraken X60 (TalonFX) (`kFlywheelLeaderMotorId = 35`, `kFlywheelFollower1MotorId = 36`, `kFlywheelFollower2MotorId = 38`, `kFlywheelFollower3MotorId = 39`, `kFlywheelFollower4MotorId = 37`) in leader-follower configuration. Current limits: $80\text{ A}$ stator / $60\text{ A}$ supply.
+  - **Adjustable Hood Motor**: 1x NEO Vortex with SPARK MAX controller (`kHoodMotorId = 42`) for precision trajectory control ($0^\circ$ to $60^\circ$). Current limits: $40\text{ A}$ smart current limit.
 - **Control**:
   - Flywheel: Closed-loop `VelocityVoltage(EnableFOC = true)` with Slot 0 PID ($kP = 0.15$) & Feedforward ($kV = 0.12$, $kS = 0.25$, $kA = 0.01$).
-  - Accelerator: Closed-loop / feedforward velocity control ($60\text{ RPS}$, $\approx 3600\text{ RPM}$).
-  - Hood: Closed-loop `PositionVoltage(EnableFOC = true)` with Slot 0 Position PID ($kP = 20.0$).
+  - Hood: Closed-loop position control with Slot 0 PID ($kP = 2.5$).
 - **Role**: Accelerates balls to precise exit velocity while angling the hood for accurate target trajectory.
 
 ### 6. Superstructure State Machine
 Coordinates all mechanisms into synchronized presets:
 
-| State | Arm Angle | Roller Action | Shooter Action (Flywheel + Accelerator + Hood) | Sequencer Action |
+| State | Arm Angle | Roller Action | Shooter Action (Flywheel + Hood) | Sequencer Action |
 |---|---|---|---|---|
-| **`STOW`** | $0^\circ$ | `STOP` ($0\text{ V}$) | Flywheel `STOP`, Accelerator `STOP`, Hood $0^\circ$ | `STOP` ($0\text{ RPS}$) |
-| **`INTAKE_GROUND`** | $-75^\circ$ | `INTAKE` ($+8\text{ V}$) | Flywheel `IDLE` ($20\text{ RPS}$), Accelerator `STOP`, Hood $0^\circ$ | `STOP` ($0\text{ RPS}$) |
-| **`SPIN_UP_SHOOT`** | $+60^\circ$ | `HOLD` ($+2\text{ V}$) | Flywheel Spooling, Accelerator Spooling, Hood Positioning | `STOP` ($0\text{ RPS}$) |
-| **`SHOOT`** | $+60^\circ$ | `INTAKE` ($+8\text{ V}$) | Flywheel At Speed, Accelerator At Speed, Hood At Angle | **`FEED`** ($50\text{ RPS}$) |
+| **`STOW`** | $0^\circ$ | `STOP` ($0\text{ V}$) | Flywheel `STOP`, Hood $0^\circ$ | `STOP` ($0\text{ RPS}$) |
+| **`INTAKE_GROUND`** | $-75^\circ$ | `INTAKE` ($+8\text{ V}$) | Flywheel `IDLE` ($20\text{ RPS}$), Hood $0^\circ$ | `STOP` ($0\text{ RPS}$) |
+| **`SPIN_UP_SHOOT`** | $+60^\circ$ | `HOLD` ($+2\text{ V}$) | Flywheel Spooling, Hood Positioning | `STOP` ($0\text{ RPS}$) |
+| **`SHOOT`** | $+60^\circ$ | `INTAKE` ($+8\text{ V}$) | Flywheel At Speed, Hood At Angle | **`FEED`** ($50\text{ RPS}$) |
 
 ---
 
@@ -161,30 +159,29 @@ Coordinates all mechanisms into synchronized presets:
 | CAN ID | Device Type | Model | Subsystem / Location | Bus |
 |---|---|---|---|---|
 | **1** | Motor Controller | TalonFX (Kraken X60) | Swerve Front Left Drive | CANivore / RIO |
-| **2** | Motor Controller | TalonFX (Kraken X60) | Swerve Front Left Steer | CANivore / RIO |
+| **2** | Motor Controller | TalonFX (Kraken X44) | Swerve Front Left Steer | CANivore / RIO |
 | **3** | Absolute Encoder | CANcoder | Swerve Front Left Angle | CANivore / RIO |
 | **4** | Motor Controller | TalonFX (Kraken X60) | Swerve Front Right Drive | CANivore / RIO |
-| **5** | Motor Controller | TalonFX (Kraken X60) | Swerve Front Right Steer | CANivore / RIO |
+| **5** | Motor Controller | TalonFX (Kraken X44) | Swerve Front Right Steer | CANivore / RIO |
 | **6** | Absolute Encoder | CANcoder | Swerve Front Right Angle | CANivore / RIO |
 | **7** | Motor Controller | TalonFX (Kraken X60) | Swerve Back Left Drive | CANivore / RIO |
-| **8** | Motor Controller | TalonFX (Kraken X60) | Swerve Back Left Steer | CANivore / RIO |
+| **8** | Motor Controller | TalonFX (Kraken X44) | Swerve Back Left Steer | CANivore / RIO |
 | **9** | Absolute Encoder | CANcoder | Swerve Back Left Angle | CANivore / RIO |
 | **10** | Motor Controller | TalonFX (Kraken X60) | Swerve Back Right Drive | CANivore / RIO |
-| **11** | Motor Controller | TalonFX (Kraken X60) | Swerve Back Right Steer | CANivore / RIO |
+| **11** | Motor Controller | TalonFX (Kraken X44) | Swerve Back Right Steer | CANivore / RIO |
 | **12** | Absolute Encoder | CANcoder | Swerve Back Right Angle | CANivore / RIO |
 | **20** | IMU | Pigeon 2 | Drivetrain Heading | CANivore / RIO |
-| **30** | Motor Controller | SPARK Flex (NEO Vortex) | Arm Pivot Motor | RIO CAN |
+| **30** | Motor Controller | SPARK MAX (NEO Vortex) | Arm Pivot Motor | RIO CAN |
 | **31** | Motor Controller | TalonFX (Kraken X60) | Intake Roller Leader Motor | CANivore / RIO |
 | **32** | Motor Controller | TalonFX (Kraken X60) | Intake Roller Follower Motor | CANivore / RIO |
-| **33** | Motor Controller | SPARK Flex (NEO Vortex) | Sequencer Feeder Leader Motor | RIO CAN |
-| **34** | Motor Controller | SPARK Flex (NEO Vortex) | Sequencer Feeder Follower Motor | RIO CAN |
+| **33** | Motor Controller | SPARK MAX (NEO Vortex) | Sequencer Feeder Leader Motor | RIO CAN |
+| **34** | Motor Controller | SPARK MAX (NEO Vortex) | Sequencer Feeder Follower Motor | RIO CAN |
 | **35** | Motor Controller | TalonFX (Kraken X60) | Shooter Flywheel Leader Motor | CANivore / RIO |
 | **36** | Motor Controller | TalonFX (Kraken X60) | Shooter Flywheel Follower 1 Motor | CANivore / RIO |
-| **37** | Motor Controller | TalonFX (Kraken X44/X60) | Shooter Adjustable Hood Motor | CANivore / RIO |
+| **37** | Motor Controller | TalonFX (Kraken X60) | Shooter Flywheel Follower 4 Motor | CANivore / RIO |
 | **38** | Motor Controller | TalonFX (Kraken X60) | Shooter Flywheel Follower 2 Motor | CANivore / RIO |
 | **39** | Motor Controller | TalonFX (Kraken X60) | Shooter Flywheel Follower 3 Motor | CANivore / RIO |
-| **40** | Motor Controller | SPARK Flex (NEO Vortex) | Shooter Accelerator Leader Motor | RIO CAN |
-| **41** | Motor Controller | SPARK Flex (NEO Vortex) | Shooter Accelerator Follower Motor | RIO CAN |
+| **42** | Motor Controller | SPARK MAX (NEO Vortex) | Shooter Adjustable Hood Motor | RIO CAN |
 
 ---
 

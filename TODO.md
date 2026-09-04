@@ -23,33 +23,32 @@ Device IDs configured from `TunerConstants.java` and `Constants.java`:
 - [x] **CAN Bus Name**: `kCANBusName = ""` (Default RIO CAN bus)
 - [x] **Swerve Pigeon 2 IMU**: `kPigeon2CanId = 20`
 - [x] **Front Left Module**:
-  - [x] Drive Motor: `kFrontLeftDriveMotorId = 1`
-  - [x] Steer Motor: `kFrontLeftSteerMotorId = 2`
+  - [x] Drive Motor: `kFrontLeftDriveMotorId = 1` (Kraken X60)
+  - [x] Steer Motor: `kFrontLeftSteerMotorId = 2` (Kraken X44)
   - [x] CANcoder: `kFrontLeftCANcoderId = 3`
 - [x] **Front Right Module**:
-  - [x] Drive Motor: `kFrontRightDriveMotorId = 4`
-  - [x] Steer Motor: `kFrontRightSteerMotorId = 5`
+  - [x] Drive Motor: `kFrontRightDriveMotorId = 4` (Kraken X60)
+  - [x] Steer Motor: `kFrontRightSteerMotorId = 5` (Kraken X44)
   - [x] CANcoder: `kFrontRightCANcoderId = 6`
 - [x] **Back Left Module**:
-  - [x] Drive Motor: `kBackLeftDriveMotorId = 7`
-  - [x] Steer Motor: `kBackLeftSteerMotorId = 8`
+  - [x] Drive Motor: `kBackLeftDriveMotorId = 7` (Kraken X60)
+  - [x] Steer Motor: `kBackLeftSteerMotorId = 8` (Kraken X44)
   - [x] CANcoder: `kBackLeftCANcoderId = 9`
 - [x] **Back Right Module**:
-  - [x] Drive Motor: `kBackRightDriveMotorId = 10`
-  - [x] Steer Motor: `kBackRightSteerMotorId = 11`
+  - [x] Drive Motor: `kBackRightDriveMotorId = 10` (Kraken X60)
+  - [x] Steer Motor: `kBackRightSteerMotorId = 11` (Kraken X44)
   - [x] CANcoder: `kBackRightCANcoderId = 12`
-- [x] **Arm (Intake Deploy) Motor**: `ArmConstants.kMotorId = 30` (NEO Vortex on SPARK Flex)
+- [x] **Arm (Intake Deploy) Motor**: `ArmConstants.kMotorId = 30` (NEO Vortex on SPARK MAX)
 - [x] **Roller (Intake Leader) Motor**: `RollerConstants.kLeaderMotorId = 31` (Kraken X60)
 - [x] **Roller (Intake Follower) Motor**: `RollerConstants.kFollowerMotorId = 32` (Kraken X60)
-- [x] **Sequencer Leader Motor**: `SequencerConstants.kLeaderMotorId = 33` (NEO Vortex on SPARK Flex)
-- [x] **Sequencer Follower Motor**: `SequencerConstants.kFollowerMotorId = 34` (NEO Vortex on SPARK Flex)
+- [x] **Sequencer Leader Motor**: `SequencerConstants.kLeaderMotorId = 33` (NEO Vortex on SPARK MAX)
+- [x] **Sequencer Follower Motor**: `SequencerConstants.kFollowerMotorId = 34` (NEO Vortex on SPARK MAX)
 - [x] **Shooter Flywheel Leader Motor**: `ShooterConstants.kFlywheelLeaderMotorId = 35` (Kraken X60)
 - [x] **Shooter Flywheel Follower 1 Motor**: `ShooterConstants.kFlywheelFollower1MotorId = 36` (Kraken X60)
 - [x] **Shooter Flywheel Follower 2 Motor**: `ShooterConstants.kFlywheelFollower2MotorId = 38` (Kraken X60)
 - [x] **Shooter Flywheel Follower 3 Motor**: `ShooterConstants.kFlywheelFollower3MotorId = 39` (Kraken X60)
-- [x] **Shooter Hood Motor**: `ShooterConstants.kHoodMotorId = 37` (Kraken X44/X60)
-- [x] **Shooter Accelerator Leader Motor**: `ShooterConstants.kAcceleratorLeaderMotorId = 40` (NEO Vortex on SPARK Flex)
-- [x] **Shooter Accelerator Follower Motor**: `ShooterConstants.kAcceleratorFollowerMotorId = 41` (NEO Vortex on SPARK Flex)
+- [x] **Shooter Flywheel Follower 4 Motor**: `ShooterConstants.kFlywheelFollower4MotorId = 37` (Kraken X60)
+- [x] **Shooter Hood Motor**: `ShooterConstants.kHoodMotorId = 42` (NEO Vortex on SPARK MAX)
 
 ---
 
@@ -82,8 +81,8 @@ Device IDs configured from `TunerConstants.java` and `Constants.java`:
 | `kSteerGearRatio` | `26.09090909090909` | TunerConstants |
 | `kDriveStatorCurrentLimitAmps` | `120.0` | Peak slip torque limit |
 | `kDriveSupplyCurrentLimitAmps` | `60.0` | Supply current limit |
-| `kSteerStatorCurrentLimitAmps` | `60.0` | Steer stator limit |
-| `kSteerSupplyCurrentLimitAmps` | `40.0` | Steer supply limit |
+| `kSteerStatorCurrentLimitAmps` | `40.0` | Kraken X44 steer stator limit |
+| `kSteerSupplyCurrentLimitAmps` | `30.0` | Kraken X44 steer supply limit |
 | `kSteerProportionalGain` ($kP$) | `59.5` | TunerConstants |
 | `kSteerDerivativeGain` ($kD$) | `0.075` | TunerConstants |
 | `kDriveProportionalGain` ($kP$) | `0.05` | TunerConstants |
@@ -136,7 +135,7 @@ Device IDs configured from `TunerConstants.java` and `Constants.java`:
 | `kFlywheelFollowerMotorId` | `36` | Flywheel follower motor |
 | `kFlywheelProportionalGain` ($kP$) | `0.15` | Flywheel velocity $kP$ |
 | `kFlywheelSupplyCurrentLimitAmps` | `60.0` | Flywheel supply limit |
-| `kHoodMotorId` | `37` | Hood motor ID |
+| `kHoodMotorId` | `42` | Hood motor ID |
 | `kHoodProportionalGain` ($kP$) | `20.0` | Hood position $kP$ |
 | `kHoodSupplyCurrentLimitAmps` | `40.0` | Hood supply limit |
 | `kHoodMinAngleRadians` | $0^\circ$ | Hood minimum angle |

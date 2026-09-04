@@ -16,6 +16,7 @@ import frc.robot.subsystems.roller.RollerIOSim;
 import frc.robot.subsystems.sequencer.Sequencer;
 import frc.robot.subsystems.sequencer.SequencerIOSim;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.swerve.GyroIOSim;
 import frc.robot.subsystems.swerve.SwerveDrive;
@@ -254,26 +255,21 @@ public class SubsystemsTest {
     shooter.prepareShot(70.0, Math.toRadians(35.0));
     assertEquals(70.0, shooter.getTargetFlywheelVelocityRotationsPerSecond());
     assertEquals(Math.toRadians(35.0), shooter.getTargetHoodAngleRadians());
-    assertEquals(
-        ShooterConstants.kAcceleratorTargetVelocityRotationsPerSecond,
-        shooter.getTargetAcceleratorVelocityRotationsPerSecond());
     shooter.periodic();
     shooter.stop();
     assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond());
-    assertEquals(0.0, shooter.getTargetAcceleratorVelocityRotationsPerSecond());
   }
 
   @Test
-  public void testShooterAcceleratorCommands() {
+  public void testShooterReadyToShoot() {
     Shooter shooter = new Shooter(new ShooterIOSim());
-    shooter.runAccelerator();
-    assertEquals(
-        ShooterConstants.kAcceleratorTargetVelocityRotationsPerSecond,
-        shooter.getTargetAcceleratorVelocityRotationsPerSecond());
-    shooter.setAcceleratorVoltage(10.0);
-    assertEquals(0.0, shooter.getTargetAcceleratorVelocityRotationsPerSecond());
-    shooter.stopAccelerator();
-    assertEquals(0.0, shooter.getTargetAcceleratorVelocityRotationsPerSecond());
+    assertFalse(shooter.isReadyToShoot());
+
+    shooter.setFlywheelVelocity(0.0);
+    shooter.setHoodAngle(0.0);
+    shooter.periodic();
+    // At zero target speed, atTargetFlywheelSpeed is false
+    assertFalse(shooter.isReadyToShoot());
   }
 
   @Test
@@ -360,5 +356,81 @@ public class SubsystemsTest {
     swerve.resetOdometry(new Pose2d(2.0, 4.0, Rotation2d.fromDegrees(90)));
     assertEquals(2.0, swerve.getPose().getX(), 1e-3);
     assertEquals(4.0, swerve.getPose().getY(), 1e-3);
+  }
+
+  @Test
+  public void testShooter5FlywheelsAndNeoVortexHoodSim() {
+    ShooterIOSim simIO = new ShooterIOSim();
+    ShooterIO.ShooterIOInputs inputs = new ShooterIO.ShooterIOInputs();
+
+    simIO.setFlywheelVelocity(70.0);
+    simIO.setHoodAngle(Math.toRadians(45.0));
+    simIO.updateInputs(inputs);
+
+    assertEquals(70.0, inputs.flywheelTargetVelocityRotationsPerSecond, 1e-4);
+    assertEquals(Math.toRadians(45.0), inputs.hoodTargetAngleRadians, 1e-4);
+    assertTrue(inputs.flywheelFollower4CurrentAmps >= 0.0);
+    assertEquals(inputs.flywheelLeaderCurrentAmps, inputs.flywheelFollower4CurrentAmps, 1e-4);
+  }
+
+  @Test
+  public void testShooterIOHardwareConstructors() {
+    // 6-motor constructor
+    var hw6 = new frc.robot.subsystems.shooter.ShooterIOHardware(
+        Constants.ShooterConstants.kFlywheelLeaderMotorId,
+        Constants.ShooterConstants.kFlywheelFollower1MotorId,
+        Constants.ShooterConstants.kFlywheelFollower2MotorId,
+        Constants.ShooterConstants.kFlywheelFollower3MotorId,
+        Constants.ShooterConstants.kFlywheelFollower4MotorId,
+        Constants.ShooterConstants.kHoodMotorId);
+    assertNotNull(hw6);
+    hw6.close();
+
+    // Default constructor
+    var hwDef = new frc.robot.subsystems.shooter.ShooterIOHardware();
+    assertNotNull(hwDef);
+
+    hwDef.setFlywheelVoltage(6.0);
+    hwDef.setHoodVoltage(6.0);
+    hwDef.stopFlywheel();
+    hwDef.stopHood();
+    hwDef.resetHoodEncoder();
+
+    hwDef.updateInputs(null);
+    ShooterIO.ShooterIOInputs inputs = new ShooterIO.ShooterIOInputs();
+    hwDef.updateInputs(inputs);
+    assertNotNull(inputs);
+    hwDef.close();
+  }
+
+  @Test
+  public void testArmAndSequencerSparkMaxIO() {
+    var armSparkMax = new frc.robot.subsystems.arm.ArmIOSparkMax(60);
+    assertNotNull(armSparkMax);
+    armSparkMax.setVoltage(6.0);
+    armSparkMax.setBrakeMode(true);
+    armSparkMax.resetEncoder();
+    armSparkMax.updateInputs(null);
+    armSparkMax.close();
+
+    var seqSparkMax = new frc.robot.subsystems.sequencer.SequencerIOSparkMax(61, 62);
+    assertNotNull(seqSparkMax);
+    seqSparkMax.setVoltage(6.0);
+    seqSparkMax.setBrakeMode(true);
+    seqSparkMax.stop();
+    seqSparkMax.updateInputs(null);
+    seqSparkMax.close();
+  }
+
+  @Test
+  public void testSwerveModuleKrakenX44SteerSim() {
+    SwerveModuleIOSim moduleSim = new SwerveModuleIOSim();
+    frc.robot.subsystems.swerve.SwerveModuleIO.SwerveModuleIOInputs inputs =
+        new frc.robot.subsystems.swerve.SwerveModuleIO.SwerveModuleIOInputs();
+    moduleSim.setSteerAngle(Rotation2d.fromDegrees(45.0));
+    moduleSim.setDriveVoltage(6.0);
+    moduleSim.updateInputs(inputs);
+    assertTrue(inputs.steerCurrentAmps >= 0.0);
+    assertTrue(inputs.driveCurrentAmps >= 0.0);
   }
 }
