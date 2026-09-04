@@ -20,14 +20,12 @@ import frc.robot.Constants.SequencerConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.subsystems.arm.Arm;
-import frc.robot.subsystems.arm.ArmIOSparkFlex;
 import frc.robot.subsystems.arm.ArmIOSparkMax;
 import frc.robot.subsystems.arm.ArmIOSim;
 import frc.robot.subsystems.roller.Roller;
 import frc.robot.subsystems.roller.RollerIOKraken;
 import frc.robot.subsystems.roller.RollerIOSim;
 import frc.robot.subsystems.sequencer.Sequencer;
-import frc.robot.subsystems.sequencer.SequencerIOSparkFlex;
 import frc.robot.subsystems.sequencer.SequencerIOSparkMax;
 import frc.robot.subsystems.sequencer.SequencerIOSim;
 import frc.robot.subsystems.shooter.Shooter;
@@ -200,6 +198,9 @@ public class RobotContainer {
     // INTAKE: Sequential Ground Intake (Arm deploys -> waits for angle -> spins roller -> stows on release)
     m_driverController.leftTrigger(DriverConstants.kTriggerThreshold).whileTrue(
         m_superstructure.intakeSequenceCommand());
+
+    m_driverController.leftBumper().debounce(0.05).whileTrue(
+        m_superstructure.manual_shoot());
 
     // SHOOT: Dynamic Auto-Aim & Shoot (Heading lock + dynamic flywheel/hood -> auto-feed)
     m_driverController.rightTrigger(DriverConstants.kTriggerThreshold).whileTrue(

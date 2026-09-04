@@ -168,14 +168,21 @@ public class Superstructure extends SubsystemBase {
           SmartDashboard.putBoolean("AutoAim/Ready To Fire", fullyReady);
         },
         this,
-        swerve
-    ).finallyDo(interrupted -> {
-        // Return to STOW and stop shooter & sequencer upon trigger release
-        m_shooter.stop();
-        m_sequencer.stop();
-        applyState(SuperstructureState.STOW);
-        m_desiredState = SuperstructureState.STOW;
-    }).withName("Superstructure.autoAimAndShoot");
+        swerve).finallyDo(interrupted -> {
+          // Return to STOW and stop shooter & sequencer upon trigger release
+          m_shooter.stop();
+          m_sequencer.stop();
+          applyState(SuperstructureState.STOW);
+          m_desiredState = SuperstructureState.STOW;
+        }).withName("Superstructure.autoAimAndShoot");
+  }
+
+  public Command manual_shoot() {
+    return Commands.run(
+        () -> {
+          m_shooter.prepareShot(
+              60, Math.toRadians(10));
+        });
   }
 
   /** @return the state the superstructure is currently transitioning toward */
