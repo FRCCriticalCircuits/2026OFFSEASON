@@ -303,6 +303,19 @@ public class SubsystemsTest {
 
     // Sequential intake command
     assertNotNull(superstructure.intakeSequenceCommand());
+
+    // Manual shoot command
+    var manualShootCmd = superstructure.manual_shoot();
+    assertNotNull(manualShootCmd);
+    assertTrue(manualShootCmd.getRequirements().contains(superstructure));
+    manualShootCmd.initialize();
+    manualShootCmd.execute();
+    assertEquals(SuperstructureState.SPIN_UP_SHOOT, superstructure.getDesiredState());
+    assertEquals(60.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
+    assertEquals(Math.toRadians(10), shooter.getTargetHoodAngleRadians(), 1e-4);
+    manualShootCmd.end(false);
+    assertEquals(SuperstructureState.STOW, superstructure.getDesiredState());
+    assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
   }
 
   @Test

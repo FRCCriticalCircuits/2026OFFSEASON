@@ -176,9 +176,15 @@ public class Superstructure extends SubsystemBase {
   public Command manual_shoot() {
     return Commands.run(
         () -> {
-          m_shooter.prepareShot(
-              60, Math.toRadians(10));
-        });
+          m_shooter.prepareShot(60, Math.toRadians(10));
+          m_desiredState = SuperstructureState.SPIN_UP_SHOOT;
+        },
+        this)
+        .finallyDo(interrupted -> {
+          m_shooter.stop();
+          m_desiredState = SuperstructureState.STOW;
+        })
+        .withName("Superstructure.manualShoot");
   }
 
   /** @return the state the superstructure is currently transitioning toward */
