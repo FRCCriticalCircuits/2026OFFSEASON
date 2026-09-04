@@ -180,6 +180,7 @@ public class Superstructure extends SubsystemBase {
   public Command manual_shoot() {
     return Commands.run(
         () -> {
+          m_arm.setGoal(Math.toRadians(15));
           m_shooter.prepareShot(
               60, Math.toRadians(10));
         });
