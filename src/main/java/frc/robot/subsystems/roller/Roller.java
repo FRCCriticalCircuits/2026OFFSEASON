@@ -10,13 +10,14 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.RollerConstants;
 import java.util.Objects;
+import org.littletonrobotics.junction.Logger;
 
 /**
  * Roller subsystem for intaking and outtaking game pieces/balls.
  */
 public class Roller extends SubsystemBase {
   private final RollerIO m_rollerIO;
-  private final RollerIO.RollerIOInputs m_inputs = new RollerIO.RollerIOInputs();
+  private final RollerIOInputsAutoLogged m_inputs = new RollerIOInputsAutoLogged();
 
   /**
    * Creates a new Roller subsystem.
@@ -128,6 +129,13 @@ public class Roller extends SubsystemBase {
       return;
     }
     m_rollerIO.updateInputs(m_inputs);
+    Logger.processInputs("Roller", m_inputs);
+
+    Logger.recordOutput("Roller/VelocityRps", m_inputs.velocityRotationsPerSecond);
+    Logger.recordOutput("Roller/AppliedOutputVolts", m_inputs.appliedVolts);
+    Logger.recordOutput("Roller/LeaderCurrentAmps", m_inputs.leaderCurrentAmps);
+    Logger.recordOutput("Roller/FollowerCurrentAmps", m_inputs.followerCurrentAmps);
+    Logger.recordOutput("Roller/GamePieceDetected", m_inputs.gamePieceDetected);
 
     SmartDashboard.putNumber("Roller/Velocity (RPS)", m_inputs.velocityRotationsPerSecond);
     SmartDashboard.putNumber("Roller/Applied Output (V)", m_inputs.appliedVolts);

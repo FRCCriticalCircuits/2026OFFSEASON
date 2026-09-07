@@ -1,19 +1,56 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;
+import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import org.littletonrobotics.junction.LoggedRobot;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
-public class Robot extends TimedRobot {
+public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
 
   public Robot() {
+    if (Robot.isReal()) {
+      java.io.File ctreLogDir = new java.io.File(Constants.LoggingConstants.kCTRELogPath);
+      if (!ctreLogDir.exists()) {
+        ctreLogDir.mkdirs();
+      }
+      if (ctreLogDir.exists()) {
+        SignalLogger.setPath(Constants.LoggingConstants.kCTRELogPath);
+      }
+    }
+
+    // Record metadata
+    Logger.recordMetadata("ProjectName", BuildConstants.MAVEN_NAME);
+    Logger.recordMetadata("BuildDate", BuildConstants.BUILD_DATE);
+    Logger.recordMetadata("GitSHA", BuildConstants.GIT_SHA);
+    Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
+    Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
+    Logger.recordMetadata(
+        "GIT Status",
+        switch (BuildConstants.DIRTY) {
+          case 0 -> "All changes committed";
+          case 1 -> "Uncommitted changes";
+          default -> "Unknown";
+        });
+
+    // Set up data receivers
+    Logger.addDataReceiver(new WPILOGWriter());
+    if (!Robot.isReal() || !Constants.LoggingConstants.kCompetitionMode) {
+      Logger.addDataReceiver(new NT4Publisher());
+    }
+
+    if (Constants.LoggingConstants.kSysIdSwerve) {
+      SignalLogger.start();
+    }
+    Logger.start();
+
     m_robotContainer = new RobotContainer();
   }
 
@@ -69,4 +106,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testExit() {}
+
+  @Override
+  public void simulationPeriodic() {}
 }
+

@@ -17,6 +17,8 @@ package frc.robot.subsystems.arm;
  *   <li>{@link ArmIOKraken}  — real CTRE Kraken X60 (TalonFX) hardware
  * </ul>
  */
+import org.littletonrobotics.junction.AutoLog;
+
 public interface ArmIO {
 
   // ─── Inputs (hardware → subsystem) ────────────────────────────────────────
@@ -26,6 +28,7 @@ public interface ArmIO {
    * The subsystem calls {@link ArmIO#updateInputs(ArmIOInputs)} once per
    * periodic loop to refresh this struct.
    */
+  @AutoLog
   class ArmIOInputs {
     /** Current arm angle in radians (0 = horizontal, positive = up). */
     public double angleRadians = 0.0;

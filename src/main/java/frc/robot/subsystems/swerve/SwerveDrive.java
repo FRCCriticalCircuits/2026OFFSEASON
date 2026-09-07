@@ -29,13 +29,21 @@ import frc.robot.Constants.AutoAimConstants;
 import frc.robot.Constants.SwerveConstants;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+import org.littletonrobotics.junction.Logger;
 
 public class SwerveDrive extends SubsystemBase {
   private final GyroIO m_gyroIO;
-  private final GyroIO.GyroIOInputs m_gyroInputs = new GyroIO.GyroIOInputs();
+  private final GyroIOInputsAutoLogged m_gyroInputs = new GyroIOInputsAutoLogged();
 
   private final SwerveModuleIO[] m_moduleIOs;
-  private final SwerveModuleIO.SwerveModuleIOInputs[] m_moduleInputs;
+  private final SwerveModuleIOInputsAutoLogged[] m_moduleInputs;
+  private SwerveModuleState[] m_targetModuleStates =
+      new SwerveModuleState[] {
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState()
+      };
 
   private final SwerveDriveKinematics m_kinematics;
   private final SwerveDriveOdometry m_odometry;
@@ -58,11 +66,11 @@ public class SwerveDrive extends SubsystemBase {
           frontLeftModuleIO, frontRightModuleIO, backLeftModuleIO, backRightModuleIO
         };
     m_moduleInputs =
-        new SwerveModuleIO.SwerveModuleIOInputs[] {
-          new SwerveModuleIO.SwerveModuleIOInputs(),
-          new SwerveModuleIO.SwerveModuleIOInputs(),
-          new SwerveModuleIO.SwerveModuleIOInputs(),
-          new SwerveModuleIO.SwerveModuleIOInputs()
+        new SwerveModuleIOInputsAutoLogged[] {
+          new SwerveModuleIOInputsAutoLogged(),
+          new SwerveModuleIOInputsAutoLogged(),
+          new SwerveModuleIOInputsAutoLogged(),
+          new SwerveModuleIOInputsAutoLogged()
         };
 
     double halfWheelbaseMeters = SwerveConstants.kWheelbaseMeters / 2.0;
@@ -110,6 +118,7 @@ public class SwerveDrive extends SubsystemBase {
     SwerveModuleState[] targetStates = m_kinematics.toSwerveModuleStates(chassisSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(
         targetStates, SwerveConstants.kMaxSpeedMetersPerSecond);
+    m_targetModuleStates = targetStates;
 
     for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
       targetStates[moduleIndex].optimize(m_moduleInputs[moduleIndex].steerAngle);
@@ -238,6 +247,7 @@ public class SwerveDrive extends SubsystemBase {
     SwerveModuleState[] targetStates = m_kinematics.toSwerveModuleStates(speeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(
         targetStates, SwerveConstants.kMaxSpeedMetersPerSecond);
+    m_targetModuleStates = targetStates;
 
     for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
       targetStates[moduleIndex].optimize(m_moduleInputs[moduleIndex].steerAngle);
@@ -337,8 +347,10 @@ public class SwerveDrive extends SubsystemBase {
   public void periodic() {
     for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
       m_moduleIOs[moduleIndex].updateInputs(m_moduleInputs[moduleIndex]);
+      Logger.processInputs("Swerve/Module" + moduleIndex, m_moduleInputs[moduleIndex]);
     }
     m_gyroIO.updateInputs(m_gyroInputs);
+    Logger.processInputs("Swerve/Gyro", m_gyroInputs);
 
     if (m_gyroIO instanceof GyroIOSim) {
       ChassisSpeeds chassisSpeeds = m_kinematics.toChassisSpeeds(getModuleStates());
@@ -349,11 +361,19 @@ public class SwerveDrive extends SubsystemBase {
 
     m_odometry.update(getHeading(), getModulePositions());
 
+    SwerveModuleState[] moduleStates = getModuleStates();
+
+    Logger.recordOutput("Swerve/Pose", getPose());
+    Logger.recordOutput("Swerve/OdometryPose", getPose());
+    Logger.recordOutput("Swerve/HeadingDegrees", getHeading().getDegrees());
+    Logger.recordOutput("Swerve/CurrentModuleStates", moduleStates);
+    Logger.recordOutput("Swerve/TargetModuleStates", m_targetModuleStates);
+    Logger.recordOutput("Swerve/RobotRelativeSpeeds", getRobotRelativeSpeeds());
+
     SmartDashboard.putNumber("Swerve/Pose X Meters", getPose().getX());
     SmartDashboard.putNumber("Swerve/Pose Y Meters", getPose().getY());
     SmartDashboard.putNumber("Swerve/Heading Degrees", getHeading().getDegrees());
 
-    SwerveModuleState[] moduleStates = getModuleStates();
     for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
       SmartDashboard.putNumber(
           "Swerve/Module " + moduleIndex + "/Speed (m per sec)",
@@ -362,5 +382,10 @@ public class SwerveDrive extends SubsystemBase {
           "Swerve/Module " + moduleIndex + "/Angle (deg)",
           moduleStates[moduleIndex].angle.getDegrees());
     }
+  }
+
+  /** @return The current target swerve module states commanded to the modules. */
+  public SwerveModuleState[] getTargetModuleStates() {
+    return m_targetModuleStates;
   }
 }

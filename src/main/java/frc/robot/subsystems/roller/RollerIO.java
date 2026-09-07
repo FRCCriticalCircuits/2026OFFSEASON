@@ -11,9 +11,12 @@ package frc.robot.subsystems.roller;
  * {@link Roller} subsystem logic is fully decoupled from any specific motor
  * controller or simulation backend.
  */
+import org.littletonrobotics.junction.AutoLog;
+
 public interface RollerIO {
 
   /** Holds a snapshot of all sensor readings from the roller hardware. */
+  @AutoLog
   class RollerIOInputs {
     /** Current roller rotational velocity in rotations per second. */
     public double velocityRotationsPerSecond = 0.0;

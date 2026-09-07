@@ -297,4 +297,11 @@ public final class Constants {
     public static final double kIntakeGroundAngleRadians = Units.degreesToRadians(-75.0);
     public static final double kShootAngleRadians = Math.toRadians(60.0);
   }
+
+  public static final class LoggingConstants {
+    public static final boolean kCompetitionMode = false;
+    public static final String kCTRELogPath = "/media/sda1/ctre-logs/";
+    public static final boolean kSysIdSwerve = false;
+  }
 }
+

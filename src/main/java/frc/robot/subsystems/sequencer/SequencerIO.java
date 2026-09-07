@@ -11,6 +11,8 @@ package frc.robot.subsystems.sequencer;
  * {@link Sequencer} subsystem logic is fully decoupled from any specific motor
  * controller, encoder, or simulation backend.
  */
+import org.littletonrobotics.junction.AutoLog;
+
 public interface SequencerIO {
 
   // ─── Inputs (hardware → subsystem) ────────────────────────────────────────
@@ -18,6 +20,7 @@ public interface SequencerIO {
   /**
    * Holds a snapshot of all sensor readings from the sequencer hardware.
    */
+  @AutoLog
   class SequencerIOInputs {
     /** Current sequencer rotational velocity in rotations per second. */
     public double velocityRotationsPerSecond = 0.0;

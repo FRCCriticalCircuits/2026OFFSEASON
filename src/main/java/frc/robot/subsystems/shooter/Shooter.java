@@ -9,19 +9,19 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
+import org.littletonrobotics.junction.Logger;
 
 /**
- * Combined Shooter subsystem managing:
- * <ul>
- *   <li>4-Kraken Flywheels (TalonFX)</li>
- *   <li>1-Kraken Adjustable Hood (TalonFX CAN 37)</li>
- *   <li>1-NEO Vortex Supporting Shooter (SPARK MAX CAN 42)</li>
- * </ul>
- * Total: strictly 6 motors (5 Kraken X60 + 1 NEO Vortex).
+ * Shooter subsystem managing:
+ * 1. Flywheel (4x Kraken X60): Leader (CAN 35), Follower 1 (CAN 36), Follower 2 (CAN 40), Follower 3 (CAN 41)
+ * 2. Hood (1x Kraken X60): CAN 37
+ * 3. Supporting Shooter / Pre-roller (1x NEO Vortex on SPARK MAX): CAN 42
+ *
+ * <p>Total: strictly 6 motors (5 Kraken X60 + 1 NEO Vortex).
  */
 public class Shooter extends SubsystemBase {
   private final ShooterIO m_shooterIO;
-  private final ShooterIO.ShooterIOInputs m_inputs = new ShooterIO.ShooterIOInputs();
+  private final ShooterIOInputsAutoLogged m_inputs = new ShooterIOInputsAutoLogged();
 
   private double m_targetFlywheelVelocityRotationsPerSecond = 0.0;
   private double m_targetHoodAngleRadians = 0.0;
@@ -244,6 +244,32 @@ public class Shooter extends SubsystemBase {
   @Override
   public void periodic() {
     m_shooterIO.updateInputs(m_inputs);
+    Logger.processInputs("Shooter", m_inputs);
+
+    // AdvantageKit Telemetry
+    Logger.recordOutput("Shooter/FlywheelVelocityRps", m_inputs.flywheelVelocityRotationsPerSecond);
+    Logger.recordOutput("Shooter/FlywheelTargetVelocityRps", m_targetFlywheelVelocityRotationsPerSecond);
+    Logger.recordOutput("Shooter/FlywheelAppliedOutputVolts", m_inputs.flywheelAppliedVolts);
+    Logger.recordOutput("Shooter/FlywheelLeaderCurrentAmps", m_inputs.flywheelLeaderCurrentAmps);
+    Logger.recordOutput("Shooter/FlywheelFollower1CurrentAmps", m_inputs.flywheelFollower1CurrentAmps);
+    Logger.recordOutput("Shooter/FlywheelFollower2CurrentAmps", m_inputs.flywheelFollower2CurrentAmps);
+    Logger.recordOutput("Shooter/FlywheelFollower3CurrentAmps", m_inputs.flywheelFollower3CurrentAmps);
+    Logger.recordOutput("Shooter/FlywheelAtTargetSpeed", atTargetFlywheelSpeed());
+
+    Logger.recordOutput("Shooter/HoodAngleDegrees", Math.toDegrees(m_inputs.hoodAngleRadians));
+    Logger.recordOutput("Shooter/HoodTargetAngleDegrees", Math.toDegrees(m_targetHoodAngleRadians));
+    Logger.recordOutput("Shooter/HoodAppliedOutputVolts", m_inputs.hoodAppliedVolts);
+    Logger.recordOutput("Shooter/HoodCurrentAmps", m_inputs.hoodCurrentAmps);
+    Logger.recordOutput("Shooter/HoodAtTargetAngle", atTargetHoodAngle());
+
+    Logger.recordOutput(
+        "Shooter/SupportingVelocityRps", m_inputs.supportingShooterVelocityRotationsPerSecond);
+    Logger.recordOutput(
+        "Shooter/SupportingTargetVelocityRps", m_targetSupportingShooterVelocityRotationsPerSecond);
+    Logger.recordOutput("Shooter/SupportingAppliedOutputVolts", m_inputs.supportingShooterAppliedVolts);
+    Logger.recordOutput("Shooter/SupportingCurrentAmps", m_inputs.supportingShooterCurrentAmps);
+    Logger.recordOutput("Shooter/SupportingAtSpeed", atTargetSupportingShooterSpeed());
+    Logger.recordOutput("Shooter/ReadyToShoot", isReadyToShoot());
 
     // Flywheel Telemetry (4 Krakens)
     SmartDashboard.putNumber("Shooter/Flywheel Velocity (RPS)", m_inputs.flywheelVelocityRotationsPerSecond);

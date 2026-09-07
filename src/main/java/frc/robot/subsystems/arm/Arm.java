@@ -11,6 +11,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ArmConstants;
 
+import org.littletonrobotics.junction.Logger;
+
 /**
  * Arm subsystem.
  *
@@ -33,7 +35,7 @@ public class Arm extends SubsystemBase {
   // ─── IO layer ─────────────────────────────────────────────────────────────
 
   private final ArmIO m_armIO;
-  private final ArmIO.ArmIOInputs m_inputs = new ArmIO.ArmIOInputs();
+  private final ArmIOInputsAutoLogged m_inputs = new ArmIOInputsAutoLogged();
 
   // ─── Controllers ──────────────────────────────────────────────────────────
 
@@ -104,6 +106,7 @@ public class Arm extends SubsystemBase {
   public void periodic() {
     // 1. Refresh sensor snapshot from hardware / sim
     m_armIO.updateInputs(m_inputs);
+    Logger.processInputs("Arm", m_inputs);
 
     // 2. Calculate control output
     double feedbackOutputVolts = m_feedbackController.calculate(m_inputs.angleRadians);
@@ -117,6 +120,16 @@ public class Arm extends SubsystemBase {
     m_armIO.setVoltage(totalAppliedVolts);
 
     // 4. Telemetry
+    Logger.recordOutput("Arm/AngleDegrees", Math.toDegrees(m_inputs.angleRadians));
+    Logger.recordOutput(
+        "Arm/VelocityDegreesPerSec", Math.toDegrees(m_inputs.velocityRadiansPerSecond));
+    Logger.recordOutput("Arm/GoalDegrees", Math.toDegrees(m_goalAngleRadians));
+    Logger.recordOutput("Arm/AppliedOutputVolts", totalAppliedVolts);
+    Logger.recordOutput("Arm/CurrentAmps", m_inputs.currentAmps);
+    Logger.recordOutput("Arm/AtGoal", atGoal());
+    Logger.recordOutput("Arm/ForwardLimitSwitch", m_inputs.forwardLimitSwitchTripped);
+    Logger.recordOutput("Arm/ReverseLimitSwitch", m_inputs.reverseLimitSwitchTripped);
+
     SmartDashboard.putNumber("Arm/Angle (deg)", Math.toDegrees(m_inputs.angleRadians));
     SmartDashboard.putNumber(
         "Arm/Velocity (deg per sec)", Math.toDegrees(m_inputs.velocityRadiansPerSecond));

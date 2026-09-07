@@ -7,9 +7,12 @@ package frc.robot.subsystems.shooter;
 /**
  * Hardware abstraction interface for the Shooter subsystem (Flywheel + Adjustable Hood).
  */
+import org.littletonrobotics.junction.AutoLog;
+
 public interface ShooterIO {
 
   /** Holds a snapshot of all sensor readings and control states from the shooter hardware. */
+  @AutoLog
   class ShooterIOInputs {
     // ── Flywheel ────────────────────────────────────────────────────────────
     /** Current flywheel rotational velocity in rotations per second. */

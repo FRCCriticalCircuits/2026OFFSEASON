@@ -11,6 +11,7 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.AutoAimConstants;
+import org.littletonrobotics.junction.Logger;
 
 /**
  * Auto-Aim calculation engine for dynamic distance, robot heading alignment,
@@ -140,6 +141,18 @@ public class AutoAim {
     boolean distanceInRange =
         distance >= AutoAimConstants.kMinDistanceMeters
             && distance <= AutoAimConstants.kMaxDistanceMeters;
+
+    Translation2d targetGoal = getTargetGoalLocation();
+    Logger.recordOutput("Visualization/AimTarget", new Pose2d(targetGoal, Rotation2d.kZero));
+    Logger.recordOutput(
+        "Visualization/CurrentHeading", new Pose2d(robotPose.getTranslation(), targetHeading));
+    Logger.recordOutput("Calc/AutoAimDist", distance);
+    Logger.recordOutput("AutoAim/DistanceMeters", distance);
+    Logger.recordOutput("AutoAim/TargetHeadingDegrees", targetHeading.getDegrees());
+    Logger.recordOutput("AutoAim/FlywheelVelocityRps", flywheelRps);
+    Logger.recordOutput("AutoAim/HoodAngleRadians", hoodAngleRad);
+    Logger.recordOutput("AutoAim/HeadingAligned", headingAligned);
+    Logger.recordOutput("AutoAim/DistanceInRange", distanceInRange);
 
     return new AutoAimResult(
         distance,

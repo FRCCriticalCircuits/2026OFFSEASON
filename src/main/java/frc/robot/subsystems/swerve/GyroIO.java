@@ -5,8 +5,10 @@
 package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import org.littletonrobotics.junction.AutoLog;
 
 public interface GyroIO {
+  @AutoLog
   class GyroIOInputs {
     public boolean isConnected = false;
     public Rotation2d yawAngle = new Rotation2d();

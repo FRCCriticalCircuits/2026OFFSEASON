@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
 import frc.robot.Constants.AutoAimConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.subsystems.arm.Arm;
@@ -267,6 +268,10 @@ public class Superstructure extends SubsystemBase {
     if (atDesiredState()) {
       m_currentState = m_desiredState;
     }
+
+    Logger.recordOutput("Superstructure/CurrentState", m_currentState.name());
+    Logger.recordOutput("Superstructure/DesiredState", m_desiredState.name());
+    Logger.recordOutput("Superstructure/AtGoal", atDesiredState());
 
     SmartDashboard.putString("Superstructure/Current State", m_currentState.name());
     SmartDashboard.putString("Superstructure/Desired State", m_desiredState.name());
