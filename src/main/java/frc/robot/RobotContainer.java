@@ -199,9 +199,12 @@ public class RobotContainer {
     m_driverController.leftTrigger(DriverConstants.kTriggerThreshold).whileTrue(
         m_superstructure.intakeSequenceCommand());
 
-    m_driverController.leftBumper().debounce(0.05).whileTrue(
+    m_driverController.rightBumper().debounce(0.05).whileTrue(
         m_superstructure.manual_shoot());
 
+    m_driverController.leftBumper().debounce(0.05).whileTrue(
+        m_superstructure.Temp_intakeCommand());
+        
     // SHOOT: Dynamic Auto-Aim & Shoot (Heading lock + dynamic flywheel/hood -> auto-feed)
     m_driverController.rightTrigger(DriverConstants.kTriggerThreshold).whileTrue(
         m_superstructure.autoAimAndShootCommand(
