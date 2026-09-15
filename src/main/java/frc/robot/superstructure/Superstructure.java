@@ -89,7 +89,7 @@ public class Superstructure extends SubsystemBase {
    * 4. Automatically returns arm to STOW and stops the roller on release.
    */
 
-  public Command Temp_intakeCommand()
+  public Command manual_intake()
   {
     return Commands.sequence(
       Commands.runOnce(() -> {
@@ -99,7 +99,7 @@ public class Superstructure extends SubsystemBase {
     ).finallyDo(
         () -> {
         m_arm.setGoal(Math.toRadians(0));
-        m_roller.stop();
+        m_roller.stop(); 
         }
       ).withName("Manual Intake");
   }
@@ -192,7 +192,7 @@ public class Superstructure extends SubsystemBase {
   public Command manual_shoot() {
     return Commands.run(
         () -> {
-          m_shooter.prepareShot(60, Math.toRadians(10));
+          m_shooter.prepareShot(60, Math.toRadians(30));
           m_desiredState = SuperstructureState.SPIN_UP_SHOOT;
         },
         this)
@@ -244,7 +244,10 @@ public class Superstructure extends SubsystemBase {
 
   private void applyShooterAction(ShooterAction action) {
     switch (action) {
-      case SHOOT, SPIN_UP -> m_shooter.runFlywheel();
+      case SHOOT, SPIN_UP -> {
+        m_shooter.runFlywheel();
+        m_shooter.runSupportingShooter();
+      }
       case IDLE           -> {
         m_shooter.runIdleFlywheel();
         m_shooter.stowHood();

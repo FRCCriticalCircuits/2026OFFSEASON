@@ -312,7 +312,7 @@ public class SubsystemsTest {
     manualShootCmd.execute();
     assertEquals(SuperstructureState.SPIN_UP_SHOOT, superstructure.getDesiredState());
     assertEquals(60.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
-    assertEquals(Math.toRadians(10), shooter.getTargetHoodAngleRadians(), 1e-4);
+    assertEquals(Math.toRadians(30), shooter.getTargetHoodAngleRadians(), 1e-4);
     manualShootCmd.end(false);
     assertEquals(SuperstructureState.STOW, superstructure.getDesiredState());
     assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);

@@ -92,7 +92,7 @@ public class ShooterIOKraken implements ShooterIO {
 
     TalonFXConfiguration hoodConfig = new TalonFXConfiguration();
     hoodConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    hoodConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    hoodConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
     // Standard Kraken X44 / X60 current limits (Stator: 40A position holding, Supply: 40A breaker protection)
     hoodConfig.CurrentLimits.StatorCurrentLimit =
@@ -102,10 +102,11 @@ public class ShooterIOKraken implements ShooterIO {
         ShooterConstants.kHoodSupplyCurrentLimitAmps;
     hoodConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
 
-    // Slot 0 position PID gains for hood
+    // Slot 0 position PID & feedforward gains for hood
     hoodConfig.Slot0.kP = ShooterConstants.kHoodProportionalGain;
     hoodConfig.Slot0.kI = ShooterConstants.kHoodIntegralGain;
     hoodConfig.Slot0.kD = ShooterConstants.kHoodDerivativeGain;
+    hoodConfig.Slot0.kS = ShooterConstants.kHoodStaticGain;
 
     m_hoodMotor.getConfigurator().apply(hoodConfig);
   }
@@ -121,8 +122,9 @@ public class ShooterIOKraken implements ShooterIO {
     inputs.flywheelFollowerCurrentAmps = inputs.flywheelFollower1CurrentAmps;
 
     // Hood inputs: convert motor rotations -> mechanism radians
+    double direction = ShooterConstants.kHoodInverted ? -1.0 : 1.0;
     double motorRotations = m_hoodMotor.getPosition().getValueAsDouble();
-    inputs.hoodAngleRadians = (motorRotations / ShooterConstants.kHoodGearRatio) * (2.0 * Math.PI);
+    inputs.hoodAngleRadians = direction * (motorRotations / ShooterConstants.kHoodGearRatio) * (2.0 * Math.PI);
     inputs.hoodTargetAngleRadians = m_hoodTargetAngleRadians;
     inputs.hoodAppliedVolts = m_hoodMotor.getMotorVoltage().getValueAsDouble();
     inputs.hoodCurrentAmps = m_hoodMotor.getStatorCurrent().getValueAsDouble();
@@ -159,15 +161,17 @@ public class ShooterIOKraken implements ShooterIO {
             angleRadians,
             ShooterConstants.kHoodMinAngleRadians,
             ShooterConstants.kHoodMaxAngleRadians);
+    double direction = ShooterConstants.kHoodInverted ? -1.0 : 1.0;
     double motorRotations =
-        (m_hoodTargetAngleRadians / (2.0 * Math.PI)) * ShooterConstants.kHoodGearRatio;
+        direction * (m_hoodTargetAngleRadians / (2.0 * Math.PI)) * ShooterConstants.kHoodGearRatio;
     m_hoodMotor.setControl(m_hoodPositionControl.withPosition(motorRotations));
   }
 
   @Override
   public void setHoodVoltage(double appliedVolts) {
     double clampedVolts = MathUtil.clamp(appliedVolts, -12.0, 12.0);
-    m_hoodMotor.setControl(m_hoodVoltageControl.withOutput(clampedVolts));
+    double direction = ShooterConstants.kHoodInverted ? -1.0 : 1.0;
+    m_hoodMotor.setControl(m_hoodVoltageControl.withOutput(direction * clampedVolts));
   }
 
   @Override

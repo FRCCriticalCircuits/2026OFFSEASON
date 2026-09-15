@@ -134,22 +134,25 @@ public final class Constants {
     // ─── Hood Motor (Kraken X60 on TalonFX) ───────────────────────────────────
     public static final int kHoodMotorId = 37;
     public static final double kHoodGearRatio = 1.0;
+    public static final boolean kHoodInverted = true;
 
     public static final double kHoodMinAngleRadians = Math.toRadians(0.0);
     public static final double kHoodMaxAngleRadians = Math.toRadians(60.0);
 
-    // Kraken X60 Hood Current Limits (Stator: 40A position holding, Supply: 40A breaker protection)
-    public static final double kHoodStatorCurrentLimitAmps = 40.0;
-    public static final double kHoodSupplyCurrentLimitAmps = 40.0;
+    // Kraken X60 Hood Current Limits (Stator: 80A peak torque, Supply: 60A breaker protection)
+    public static final double kHoodStatorCurrentLimitAmps = 80.0;
+    public static final double kHoodSupplyCurrentLimitAmps = 60.0;
 
-    // Hood Position Closed-Loop PID Gains (Slot 0 on TalonFX)
-    public static final double kHoodProportionalGain = 2.5;
+    // Hood Position Closed-Loop PID & Feedforward Gains (Slot 0 on TalonFX)
+    public static final double kHoodProportionalGain = 6.0;
     public static final double kHoodIntegralGain = 0.0;
     public static final double kHoodDerivativeGain = 0.0;
+    public static final double kHoodStaticGain = 0.35;
     public static final double kHoodToleranceRadians = Math.toRadians(1.0);
 
     // Hood Angle Preset Targets
-    public static final double kHoodStowAngleRadians = Math.toRadians(0.0);
+    public static final double 
+    kHoodStowAngleRadians = Math.toRadians(30);
 
     // ─── Supporting Shooter Motor (1x NEO Vortex on SPARK MAX) ────────────────
     public static final int kSupportingShooterMotorId = 42;

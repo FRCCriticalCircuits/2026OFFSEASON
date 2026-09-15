@@ -111,14 +111,17 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
         ShooterConstants.kFlywheelSupplyCurrentLimitAmps;
     followerConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
 
+    // Follower 1 (CAN ID 36) follows Leader 35 (Aligned)
     m_flywheelFollower1.getConfigurator().apply(followerConfig);
     m_flywheelFollower1.setControl(
-        new Follower(flywheelLeaderCanId, MotorAlignmentValue.Opposed));
-
-    m_flywheelFollower2.getConfigurator().apply(followerConfig);
-    m_flywheelFollower2.setControl(
         new Follower(flywheelLeaderCanId, MotorAlignmentValue.Aligned));
 
+    // Follower 2 (CAN ID 38) opposed to Leader 35
+    m_flywheelFollower2.getConfigurator().apply(followerConfig);
+    m_flywheelFollower2.setControl(
+        new Follower(flywheelLeaderCanId, MotorAlignmentValue.Opposed));
+
+    // Follower 3 (CAN ID 39) opposed to Leader 35
     m_flywheelFollower3.getConfigurator().apply(followerConfig);
     m_flywheelFollower3.setControl(
         new Follower(flywheelLeaderCanId, MotorAlignmentValue.Opposed));
@@ -128,7 +131,7 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
 
     TalonFXConfiguration hoodConfig = new TalonFXConfiguration();
     hoodConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    hoodConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    hoodConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
     hoodConfig.CurrentLimits.StatorCurrentLimit = ShooterConstants.kHoodStatorCurrentLimitAmps;
     hoodConfig.CurrentLimits.StatorCurrentLimitEnable = true;
@@ -138,14 +141,16 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
     hoodConfig.Slot0.kP = ShooterConstants.kHoodProportionalGain;
     hoodConfig.Slot0.kI = ShooterConstants.kHoodIntegralGain;
     hoodConfig.Slot0.kD = ShooterConstants.kHoodDerivativeGain;
+    hoodConfig.Slot0.kS = ShooterConstants.kHoodStaticGain;
 
     m_hoodMotor.getConfigurator().apply(hoodConfig);
 
-    // ── 3. Supporting Shooter (1x NEO Vortex on SPARK MAX) ───────────────────
+    // ── 3. Supporting Shooter (1x NEO Vortex on SPARK MAX CAN ID 42) ─────────
     m_supportingShooterMotor = new SparkMax(supportingShooterCanId, MotorType.kBrushless);
     m_supportingShooterEncoder = m_supportingShooterMotor.getEncoder();
 
     SparkMaxConfig supportingConfig = new SparkMaxConfig();
+    supportingConfig.inverted(true);
     supportingConfig.idleMode(IdleMode.kCoast);
     supportingConfig.smartCurrentLimit(ShooterConstants.kSupportingShooterSmartCurrentLimitAmps);
     supportingConfig.voltageCompensation(ShooterConstants.kSupportingShooterVoltageCompensationVolts);
@@ -181,8 +186,9 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
     inputs.flywheelFollower3CurrentAmps = m_flywheelFollower3.getStatorCurrent().getValueAsDouble();
 
     // Hood inputs (Kraken X60)
+    double direction = ShooterConstants.kHoodInverted ? -1.0 : 1.0;
     double motorRotations = m_hoodMotor.getPosition().getValueAsDouble();
-    inputs.hoodAngleRadians = (motorRotations / ShooterConstants.kHoodGearRatio) * (2.0 * Math.PI);
+    inputs.hoodAngleRadians = direction * (motorRotations / ShooterConstants.kHoodGearRatio) * (2.0 * Math.PI);
     inputs.hoodTargetAngleRadians = m_hoodTargetAngleRadians;
     inputs.hoodAppliedVolts = m_hoodMotor.getMotorVoltage().getValueAsDouble();
     inputs.hoodCurrentAmps = m_hoodMotor.getStatorCurrent().getValueAsDouble();
@@ -226,15 +232,17 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
             angleRadians,
             ShooterConstants.kHoodMinAngleRadians,
             ShooterConstants.kHoodMaxAngleRadians);
+    double direction = ShooterConstants.kHoodInverted ? -1.0 : 1.0;
     double motorRotations =
-        (m_hoodTargetAngleRadians / (2.0 * Math.PI)) * ShooterConstants.kHoodGearRatio;
+        direction * (m_hoodTargetAngleRadians / (2.0 * Math.PI)) * ShooterConstants.kHoodGearRatio;
     m_hoodMotor.setControl(m_hoodPositionControl.withPosition(motorRotations));
   }
 
   @Override
   public void setHoodVoltage(double appliedVolts) {
     double clampedVolts = MathUtil.clamp(appliedVolts, -12.0, 12.0);
-    m_hoodMotor.setControl(m_hoodVoltageControl.withOutput(clampedVolts));
+    double direction = ShooterConstants.kHoodInverted ? -1.0 : 1.0;
+    m_hoodMotor.setControl(m_hoodVoltageControl.withOutput(direction * clampedVolts));
   }
 
   @Override
@@ -265,11 +273,11 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
   @Override
   public void setSupportingShooterVoltage(double appliedVolts) {
     if (!Double.isFinite(appliedVolts)) {
-      m_supportingShooterMotor.setVoltage(0.0);
+      m_supportingShooterMotor.stopMotor();
       return;
     }
     double clampedVolts = MathUtil.clamp(appliedVolts, -12.0, 12.0);
-    m_supportingShooterMotor.setVoltage(clampedVolts);
+    m_supportingShooterMotor.set(clampedVolts / 12.0);
   }
 
   @Override
