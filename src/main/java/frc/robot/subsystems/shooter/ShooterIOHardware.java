@@ -277,7 +277,7 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
       return;
     }
     double clampedVolts = MathUtil.clamp(appliedVolts, -12.0, 12.0);
-    m_supportingShooterMotor.set(clampedVolts / 12.0);
+    m_supportingShooterMotor.setVoltage(clampedVolts);
   }
 
   @Override

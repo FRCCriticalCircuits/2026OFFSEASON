@@ -193,11 +193,13 @@ public class Superstructure extends SubsystemBase {
     return Commands.run(
         () -> {
           m_shooter.prepareShot(60, Math.toRadians(30));
+          m_sequencer.stop();
           m_desiredState = SuperstructureState.SPIN_UP_SHOOT;
         },
         this)
         .finallyDo(interrupted -> {
           m_shooter.stop();
+          m_sequencer.stop();
           m_desiredState = SuperstructureState.STOW;
         })
         .withName("Superstructure.manualShoot");
