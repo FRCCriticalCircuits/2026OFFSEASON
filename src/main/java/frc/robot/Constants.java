@@ -297,7 +297,7 @@ public final class Constants {
   public static final class SuperstructureConstants {
     // Arm Positions for Superstructure States
     public static final double kStowAngleRadians = Math.toRadians(0.0);
-    public static final double kIntakeGroundAngleRadians = Units.degreesToRadians(-75.0);
+    public static final double kIntakeGroundAngleRadians = Units.degreesToRadians(-1.0);
     public static final double kShootAngleRadians = Math.toRadians(60.0);
   }
 
