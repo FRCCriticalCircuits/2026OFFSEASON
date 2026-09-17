@@ -131,7 +131,7 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
 
     TalonFXConfiguration hoodConfig = new TalonFXConfiguration();
     hoodConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    hoodConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    hoodConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
     hoodConfig.CurrentLimits.StatorCurrentLimit = ShooterConstants.kHoodStatorCurrentLimitAmps;
     hoodConfig.CurrentLimits.StatorCurrentLimitEnable = true;
@@ -235,7 +235,7 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
     double direction = ShooterConstants.kHoodInverted ? -1.0 : 1.0;
     double motorRotations =
         direction * (m_hoodTargetAngleRadians / (2.0 * Math.PI)) * ShooterConstants.kHoodGearRatio;
-    m_hoodMotor.setControl(m_hoodPositionControl.withPosition(motorRotations));
+    m_hoodMotor.setControl(m_hoodPositionControl.withPosition(3));
   }
 
   @Override
