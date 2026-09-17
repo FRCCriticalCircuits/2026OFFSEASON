@@ -196,21 +196,23 @@ public class RobotContainer {
     // ── 3. Single Driver Action Bindings ────────────────────────────────────
 
     // INTAKE: Sequential Ground Intake (Arm deploys -> waits for angle -> spins roller -> stows on release)
-    m_driverController.leftTrigger(DriverConstants.kTriggerThreshold).whileTrue(
+    /* m_driverController.leftTrigger(DriverConstants.kTriggerThreshold).whileTrue(
         m_superstructure.intakeSequenceCommand());
+    */
 
-    m_driverController.rightBumper().debounce(0.05).whileTrue(
+    m_driverController.rightTrigger(DriverConstants.kTriggerThreshold).debounce(0.05).whileTrue(
         m_superstructure.manual_shoot());
 
-    m_driverController.leftBumper().debounce(0.05).whileTrue(
+    m_driverController.leftTrigger().debounce(0.05).whileTrue(
         m_superstructure.manual_intake());
         
     // SHOOT: Dynamic Auto-Aim & Shoot (Heading lock + dynamic flywheel/hood -> auto-feed)
-    m_driverController.rightTrigger(DriverConstants.kTriggerThreshold).whileTrue(
+    /* m_driverController.rightBumper().whileTrue(
         m_superstructure.autoAimAndShootCommand(
             m_swerveDrive,
             () -> MathUtil.applyDeadband(-m_driverController.getLeftY(), 0.1),
             () -> MathUtil.applyDeadband(-m_driverController.getLeftX(), 0.1)));
+    */
   }
 
   // ─── Autonomous ────────────────────────────────────────────────────────────

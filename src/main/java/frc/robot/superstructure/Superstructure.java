@@ -91,12 +91,12 @@ public class Superstructure extends SubsystemBase {
 
   public Command manual_intake()
   {
-    return Commands.sequence(
-      Commands.runOnce(() -> {
+    return Commands.run(
+      () -> {
         m_arm.setGoal(Math.toRadians(15));
         m_roller.runIntake();
       }, this)
-    ).finallyDo(
+      .finallyDo(
         () -> {
         m_arm.setGoal(Math.toRadians(0));
         m_roller.stop(); 
