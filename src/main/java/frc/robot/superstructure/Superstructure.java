@@ -94,11 +94,11 @@ public class Superstructure extends SubsystemBase {
     return Commands.run(
       () -> {
         m_arm.setGoal(Math.toRadians(15));
-        m_roller.runIntake();
+        m_roller.setVoltage(2);
       }, this)
       .finallyDo(
         () -> {
-        m_arm.setGoal(Math.toRadians(0));
+        m_arm.setGoal(Math.toRadians(15));
         m_roller.stop(); 
         }
       ).withName("Manual Intake");

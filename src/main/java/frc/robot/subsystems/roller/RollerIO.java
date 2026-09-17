@@ -50,7 +50,7 @@ public interface RollerIO {
    * @param appliedVolts voltage to apply (positive = intake, negative = outtake)
    */
   default void setVoltage(double appliedVolts) {}
-
+  
   /**
    * Configures the brake/coast idle mode of the roller motor.
    *
