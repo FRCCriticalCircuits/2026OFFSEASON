@@ -235,7 +235,7 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
     double direction = ShooterConstants.kHoodInverted ? -1.0 : 1.0;
     double motorRotations =
         direction * (m_hoodTargetAngleRadians / (2.0 * Math.PI)) * ShooterConstants.kHoodGearRatio;
-    m_hoodMotor.setControl(m_hoodPositionControl.withPosition(3));
+    m_hoodMotor.setControl(m_hoodPositionControl.withPosition(motorRotations));
   }
 
   @Override

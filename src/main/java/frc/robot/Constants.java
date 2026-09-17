@@ -134,10 +134,10 @@ public final class Constants {
     // ─── Hood Motor (Kraken X60 on TalonFX) ───────────────────────────────────
     public static final int kHoodMotorId = 37;
     public static final double kHoodGearRatio = 1.0;
-    public static final boolean kHoodInverted = false;
+    public static final boolean kHoodInverted = true;
 
     public static final double kHoodMinAngleRadians = Math.toRadians(0.0);
-    public static final double kHoodMaxAngleRadians = Math.toRadians(60.0);
+    public static final double kHoodMaxAngleRadians = Math.toRadians(70.0);
 
     // Kraken X60 Hood Current Limits (Stator: 80A peak torque, Supply: 60A breaker protection)
     public static final double kHoodStatorCurrentLimitAmps = 80.0;
