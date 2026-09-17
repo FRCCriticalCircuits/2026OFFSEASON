@@ -150,7 +150,7 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
     m_supportingShooterEncoder = m_supportingShooterMotor.getEncoder();
 
     SparkMaxConfig supportingConfig = new SparkMaxConfig();
-    supportingConfig.inverted(true);
+    supportingConfig.inverted(false);
     supportingConfig.idleMode(IdleMode.kCoast);
     supportingConfig.smartCurrentLimit(ShooterConstants.kSupportingShooterSmartCurrentLimitAmps);
     supportingConfig.voltageCompensation(ShooterConstants.kSupportingShooterVoltageCompensationVolts);

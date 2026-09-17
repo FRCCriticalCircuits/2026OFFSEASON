@@ -73,7 +73,7 @@ public final class Constants {
     public static final double kSupplyCurrentLimitAmps = 60.0;
 
     // Applied Voltages for Roller Actions
-    public static final double kIntakeAppliedVolts = 8.0;
+    public static final double kIntakeAppliedVolts = 10.0;
     public static final double kEjectAppliedVolts = -8.0;
     public static final double kHoldAppliedVolts = 2.0;
   }
