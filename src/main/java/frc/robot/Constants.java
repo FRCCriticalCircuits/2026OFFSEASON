@@ -133,8 +133,8 @@ public final class Constants {
 
     // ─── Hood Motor (Kraken X60 on TalonFX) ───────────────────────────────────
     public static final int kHoodMotorId = 37;
-    public static final double kHoodGearRatio = 80.0;
-    public static final boolean kHoodInverted = true;
+    public static final double kHoodGearRatio = 20.0;
+    public static final boolean kHoodInverted = false;
 
     public static final double kHoodMinAngleRadians = Math.toRadians(0.0);
     public static final double kHoodMaxAngleRadians = Math.toRadians(70.0);

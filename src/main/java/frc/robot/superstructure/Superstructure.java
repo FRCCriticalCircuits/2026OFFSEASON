@@ -93,7 +93,7 @@ public class Superstructure extends SubsystemBase {
   {
     return Commands.run(
       () -> {
-        m_arm.setGoal(Math.toRadians(15));
+        m_arm.setGoal(-Math.toRadians(700));
         m_roller.setVoltage(-8);
       }, this)
       .finallyDo(
@@ -190,7 +190,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   public Command manual_shoot() {
-    return manual_shoot(60, Math.toRadians(10));
+    return manual_shoot(60, Math.toRadians(30));
   }
 
   public Command manual_shoot(double flywheelVelocityRps, double hoodAngleRad) {
