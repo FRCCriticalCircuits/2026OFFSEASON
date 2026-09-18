@@ -141,7 +141,7 @@ Device IDs configured from `TunerConstants.java` and `Constants.java`:
 | `kHoodProportionalGain` ($kP$) | `2.5` | Hood position $kP$ |
 | `kHoodSupplyCurrentLimitAmps` | `40.0` | Hood supply limit |
 | `kHoodMinAngleRadians` | $0^\circ$ | Hood minimum angle |
-| `kHoodMaxAngleRadians` | $60^\circ$ | Hood maximum angle |
+| `kHoodMaxAngleRadians` | $105^\circ$ | Hood maximum angle |
 | `kSupportingShooterMotorId` | `42` | Supporting shooter kicker NEO Vortex (SPARK MAX) |
 | `kSupportingShooterSmartCurrentLimitAmps` | `60` | Supporting shooter smart limit |
 | `kSupportingShooterTargetVelocityRotationsPerSecond` | `60.0` | Supporting shooter speed ($\approx 3600\text{ RPM}$) |

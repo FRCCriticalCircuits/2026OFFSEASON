@@ -143,6 +143,9 @@ public class ShooterIOHardware implements ShooterIO, AutoCloseable {
     hoodConfig.Slot0.kD = ShooterConstants.kHoodDerivativeGain;
     hoodConfig.Slot0.kS = ShooterConstants.kHoodStaticGain;
 
+    // 50ms ramp period for smooth hood acceleration/deceleration
+    hoodConfig.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.05;
+
     m_hoodMotor.getConfigurator().apply(hoodConfig);
 
     // ── 3. Supporting Shooter (1x NEO Vortex on SPARK MAX CAN ID 42) ─────────

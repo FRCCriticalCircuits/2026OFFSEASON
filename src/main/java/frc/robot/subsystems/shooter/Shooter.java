@@ -147,10 +147,10 @@ public class Shooter extends SubsystemBase {
     prepareShot(flywheelRps, hoodAngleRad);
   }
 
-  /** Stops all shooter components (flywheel, hood, and supporting shooter). */
+  /** Stops shooter motors (flywheel and supporting shooter) while keeping hood stowed. */
   public void stop() {
     stopFlywheel();
-    stopHood();
+    stowHood();
     stopSupportingShooter();
   }
 

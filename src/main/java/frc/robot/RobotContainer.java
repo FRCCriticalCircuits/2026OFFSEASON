@@ -32,6 +32,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIOHardware;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.swerve.GyroIO;
+import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.GyroIOSim;
 import frc.robot.subsystems.swerve.SwerveDrive;
 import frc.robot.subsystems.swerve.SwerveModuleIOKraken;
@@ -89,7 +90,7 @@ public class RobotContainer {
                   ShooterConstants.kSupportingShooterMotorId));
       m_swerveDrive =
           new SwerveDrive(
-              new GyroIO() {},
+              new GyroIOPigeon2(SwerveConstants.kPigeon2CanId),
               new SwerveModuleIOKraken(
                   SwerveConstants.kFrontLeftDriveMotorId,
                   SwerveConstants.kFrontLeftSteerMotorId,
@@ -192,11 +193,11 @@ public class RobotContainer {
             () -> MathUtil.applyDeadband(-m_driverController.getLeftY(), 0.1),  // Forward / backward translation
             () -> MathUtil.applyDeadband(-m_driverController.getLeftX(), 0.1),  // Left / right translation
             () -> MathUtil.applyDeadband(-m_driverController.getRightX(), 0.1), // Rotation
-            false                                  // Robot-relative driving (no physical Gyro)
+            true                                   // Field-relative driving
         ));
 
-    // Reset gyro heading — Start button
-    m_driverController.start().onTrue(
+    // Reset gyro heading — Start button or Y button
+    m_driverController.start().or(m_driverController.y()).onTrue(
         Commands.runOnce(() -> m_swerveDrive.resetHeading(), m_swerveDrive));
 
     // ── 2. Superstructure Default Command (Stow when no trigger is held) ────

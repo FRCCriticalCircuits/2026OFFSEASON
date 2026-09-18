@@ -214,7 +214,7 @@ public class Superstructure extends SubsystemBase {
         },
         this)
         .finallyDo(interrupted -> {
-          m_shooter.prepareShot(0, 0);
+          m_shooter.stop();
           m_sequencer.stop();
           m_desiredState = SuperstructureState.STOW;
         })

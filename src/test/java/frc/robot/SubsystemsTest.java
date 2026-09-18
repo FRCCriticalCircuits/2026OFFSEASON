@@ -315,10 +315,12 @@ public class SubsystemsTest {
     manualShootCmd.execute();
     assertEquals(SuperstructureState.SPIN_UP_SHOOT, superstructure.getDesiredState());
     assertEquals(60.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
-    assertEquals(Math.toRadians(30), shooter.getTargetHoodAngleRadians(), 1e-4);
+    assertEquals(Math.toRadians(100), shooter.getTargetHoodAngleRadians(), 1e-4);
     manualShootCmd.end(false);
     assertEquals(SuperstructureState.STOW, superstructure.getDesiredState());
     assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
+    assertEquals(0.0, shooter.getTargetHoodAngleRadians(), 1e-4);
+    assertEquals(0.0, shooter.getTargetSupportingShooterVelocityRotationsPerSecond(), 1e-4);
 
     // Manual shoot auto command (80 RPS, 15 deg, 6s timeout, then stop)
     var autoShootCmd = superstructure.manual_shoot_auto();
@@ -333,6 +335,8 @@ public class SubsystemsTest {
     autoShootCmd.end(false);
     assertEquals(SuperstructureState.STOW, superstructure.getDesiredState());
     assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
+    assertEquals(0.0, shooter.getTargetHoodAngleRadians(), 1e-4);
+    assertEquals(0.0, shooter.getTargetSupportingShooterVelocityRotationsPerSecond(), 1e-4);
     assertEquals(0.0, sequencer.getTargetVelocityRotationsPerSecond(), 1e-4);
   }
 
@@ -588,5 +592,36 @@ public class SubsystemsTest {
     moduleSim.updateInputs(inputs);
     assertTrue(inputs.steerCurrentAmps >= 0.0);
     assertTrue(inputs.driveCurrentAmps >= 0.0);
+  }
+
+  @Test
+  public void testSwerveFieldCentricAndResetHeading() {
+    var gyroSim = new frc.robot.subsystems.swerve.GyroIOSim();
+    var fl = new SwerveModuleIOSim();
+    var fr = new SwerveModuleIOSim();
+    var bl = new SwerveModuleIOSim();
+    var br = new SwerveModuleIOSim();
+
+    var swerve = new frc.robot.subsystems.swerve.SwerveDrive(gyroSim, fl, fr, bl, br);
+    assertEquals(0.0, swerve.getHeading().getDegrees(), 1e-3);
+    assertEquals(0.0, swerve.getRawHeading().getDegrees(), 1e-3);
+
+    // Simulate robot turning 90 degrees CCW
+    gyroSim.setYawAngle(Rotation2d.fromDegrees(90.0));
+    swerve.periodic();
+    assertEquals(90.0, swerve.getRawHeading().getDegrees(), 1e-3);
+    assertEquals(90.0, swerve.getHeading().getDegrees(), 1e-3);
+
+    // Reset heading — current orientation becomes 0 degrees
+    swerve.resetHeading();
+    swerve.periodic();
+    assertEquals(90.0, swerve.getRawHeading().getDegrees(), 1e-3);
+    assertEquals(0.0, swerve.getHeading().getDegrees(), 1e-3);
+
+    // Drive field-relative forward (X = 2.0 m/s)
+    swerve.drive(2.0, 0.0, 0.0, true);
+    var states = swerve.getTargetModuleStates();
+    assertNotNull(states);
+    assertEquals(4, states.length);
   }
 }

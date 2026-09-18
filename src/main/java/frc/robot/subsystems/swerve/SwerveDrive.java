@@ -84,6 +84,11 @@ public class SwerveDrive extends SubsystemBase {
             new Translation2d(-halfWheelbaseMeters, -halfTrackWidthMeters)  // Back Right
             );
 
+    m_gyroIO.updateInputs(m_gyroInputs);
+    for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
+      m_moduleIOs[moduleIndex].updateInputs(m_moduleInputs[moduleIndex]);
+    }
+
     m_odometry =
         new SwerveDriveOdometry(
             m_kinematics,
@@ -215,8 +220,13 @@ public class SwerveDrive extends SubsystemBase {
     return m_odometry.getPoseMeters();
   }
 
-  /** @return The current robot heading as a Rotation2d. */
+  /** @return The current robot heading on the field from odometry. */
   public Rotation2d getHeading() {
+    return getPose().getRotation();
+  }
+
+  /** @return The raw gyro heading directly from the IMU. */
+  public Rotation2d getRawHeading() {
     return m_gyroInputs.yawAngle;
   }
 
@@ -226,7 +236,7 @@ public class SwerveDrive extends SubsystemBase {
    * @param targetPose The new pose on the field.
    */
   public void resetOdometry(Pose2d targetPose) {
-    m_odometry.resetPosition(getHeading(), getModulePositions(), targetPose);
+    m_odometry.resetPosition(getRawHeading(), getModulePositions(), targetPose);
   }
 
   /**
@@ -355,17 +365,18 @@ public class SwerveDrive extends SubsystemBase {
     if (m_gyroIO instanceof GyroIOSim) {
       ChassisSpeeds chassisSpeeds = m_kinematics.toChassisSpeeds(getModuleStates());
       Rotation2d newYawAngle =
-          getHeading().plus(Rotation2d.fromRadians(chassisSpeeds.omegaRadiansPerSecond * 0.020));
+          getRawHeading().plus(Rotation2d.fromRadians(chassisSpeeds.omegaRadiansPerSecond * 0.020));
       ((GyroIOSim) m_gyroIO).setYawAngle(newYawAngle);
     }
 
-    m_odometry.update(getHeading(), getModulePositions());
+    m_odometry.update(getRawHeading(), getModulePositions());
 
     SwerveModuleState[] moduleStates = getModuleStates();
 
     Logger.recordOutput("Swerve/Pose", getPose());
     Logger.recordOutput("Swerve/OdometryPose", getPose());
     Logger.recordOutput("Swerve/HeadingDegrees", getHeading().getDegrees());
+    Logger.recordOutput("Swerve/RawHeadingDegrees", getRawHeading().getDegrees());
     Logger.recordOutput("Swerve/CurrentModuleStates", moduleStates);
     Logger.recordOutput("Swerve/TargetModuleStates", m_targetModuleStates);
     Logger.recordOutput("Swerve/RobotRelativeSpeeds", getRobotRelativeSpeeds());
@@ -373,6 +384,7 @@ public class SwerveDrive extends SubsystemBase {
     SmartDashboard.putNumber("Swerve/Pose X Meters", getPose().getX());
     SmartDashboard.putNumber("Swerve/Pose Y Meters", getPose().getY());
     SmartDashboard.putNumber("Swerve/Heading Degrees", getHeading().getDegrees());
+    SmartDashboard.putNumber("Swerve/Raw Heading Degrees", getRawHeading().getDegrees());
 
     for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
       SmartDashboard.putNumber(
