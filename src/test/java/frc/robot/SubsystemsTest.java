@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.subsystems.arm.Arm;
 import frc.robot.subsystems.arm.ArmIOSim;
 import frc.robot.subsystems.roller.Roller;
@@ -21,7 +23,6 @@ import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.swerve.GyroIOSim;
 import frc.robot.subsystems.swerve.SwerveDrive;
 import frc.robot.subsystems.swerve.SwerveModuleIOSim;
-import frc.robot.Constants.ShooterConstants;
 import frc.robot.superstructure.Superstructure;
 import frc.robot.superstructure.SuperstructureState;
 import frc.robot.util.AutoAim;
@@ -312,10 +313,69 @@ public class SubsystemsTest {
     manualShootCmd.execute();
     assertEquals(SuperstructureState.SPIN_UP_SHOOT, superstructure.getDesiredState());
     assertEquals(60.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
-    assertEquals(Math.toRadians(60), shooter.getTargetHoodAngleRadians(), 1e-4);
+    assertEquals(Math.toRadians(10), shooter.getTargetHoodAngleRadians(), 1e-4);
     manualShootCmd.end(false);
     assertEquals(SuperstructureState.STOW, superstructure.getDesiredState());
     assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
+
+    // Manual shoot auto command (80 RPS, 15 deg, 6s timeout, then stop)
+    var autoShootCmd = superstructure.manual_shoot_auto();
+    assertNotNull(autoShootCmd);
+    assertTrue(autoShootCmd.getRequirements().contains(superstructure));
+    autoShootCmd.initialize();
+    autoShootCmd.execute();
+    assertEquals(SuperstructureState.SPIN_UP_SHOOT, superstructure.getDesiredState());
+    assertEquals(80.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
+    assertEquals(Math.toRadians(15), shooter.getTargetHoodAngleRadians(), 1e-4);
+    assertEquals(10.0, sequencer.getTargetVelocityRotationsPerSecond(), 1e-4);
+    autoShootCmd.end(false);
+    assertEquals(SuperstructureState.STOW, superstructure.getDesiredState());
+    assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
+    assertEquals(0.0, sequencer.getTargetVelocityRotationsPerSecond(), 1e-4);
+  }
+
+  @Test
+  public void testManualShootAutoTimeoutAndStop() {
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.setEnabled(true);
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.setAutonomous(true);
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.notifyNewData();
+
+    Arm arm = new Arm(new ArmIOSim());
+    Sequencer sequencer = new Sequencer(new SequencerIOSim());
+    Roller roller = new Roller(new RollerIOSim());
+    Shooter shooter = new Shooter(new ShooterIOSim());
+    Superstructure superstructure = new Superstructure(sequencer, arm, roller, shooter);
+
+    Command autoShootCmd = superstructure.manual_shoot_auto();
+    CommandScheduler.getInstance().schedule(autoShootCmd);
+    assertTrue(CommandScheduler.getInstance().isScheduled(autoShootCmd));
+
+    // Run for 5 cycles (0.1s): active shooting at 80 RPS, 15 degrees
+    for (int i = 0; i < 5; i++) {
+      edu.wpi.first.wpilibj.simulation.SimHooks.stepTiming(0.020);
+      CommandScheduler.getInstance().run();
+    }
+    assertTrue(CommandScheduler.getInstance().isScheduled(autoShootCmd));
+    assertEquals(80.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
+    assertEquals(Math.toRadians(15), shooter.getTargetHoodAngleRadians(), 1e-4);
+
+    // Run until past 6.0s timeout (total 350 cycles = 7.0s)
+    for (int i = 0; i < 350; i++) {
+      edu.wpi.first.wpilibj.simulation.SimHooks.stepTiming(0.020);
+      CommandScheduler.getInstance().run();
+    }
+
+    // Command should terminate after 6s and stop shooter and sequencer
+    assertFalse(
+        CommandScheduler.getInstance().isScheduled(autoShootCmd),
+        "Auto shoot command should have finished after 6 seconds timeout");
+    assertEquals(SuperstructureState.STOW, superstructure.getDesiredState());
+    assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
+    assertEquals(0.0, sequencer.getTargetVelocityRotationsPerSecond(), 1e-4);
+
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.setEnabled(false);
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.notifyNewData();
+    CommandScheduler.getInstance().cancelAll();
   }
 
   @Test

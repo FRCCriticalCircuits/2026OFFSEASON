@@ -139,6 +139,12 @@ public class RobotContainer {
     } else {
       m_autoChooser = new SendableChooser<>();
     }
+    m_autoChooser.setDefaultOption(
+        "Manual Shoot (80 RPS, 15 deg, 6s)",
+        m_superstructure.manual_shoot_auto());
+    m_autoChooser.addOption(
+        "Manual Shoot (80 RPS, 15 deg, 6s)",
+        m_superstructure.manual_shoot_auto());
     SmartDashboard.putData("Auto Chooser", m_autoChooser);
 
     configureButtonBindings();
@@ -171,6 +177,10 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "Shoot",
         m_superstructure.setStateCommand(SuperstructureState.SHOOT).withTimeout(1.5));
+
+    NamedCommands.registerCommand(
+        "ManualShoot",
+        m_superstructure.manual_shoot_auto());
   }
 
   // ─── Button bindings ───────────────────────────────────────────────────────
@@ -221,6 +231,6 @@ public class RobotContainer {
     if (m_autoChooser != null && m_autoChooser.getSelected() != null) {
       return m_autoChooser.getSelected();
     }
-    return Commands.none();
+    return m_superstructure.manual_shoot_auto();
   }
 }

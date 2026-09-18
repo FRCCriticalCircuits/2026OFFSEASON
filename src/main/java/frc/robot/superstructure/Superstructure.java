@@ -190,9 +190,13 @@ public class Superstructure extends SubsystemBase {
   }
 
   public Command manual_shoot() {
+    return manual_shoot(60, Math.toRadians(10));
+  }
+
+  public Command manual_shoot(double flywheelVelocityRps, double hoodAngleRad) {
     return Commands.run(
         () -> {
-          m_shooter.prepareShot(60, Math.toRadians(10));
+          m_shooter.prepareShot(flywheelVelocityRps, hoodAngleRad);
           m_sequencer.setVelocity(10);
           m_desiredState = SuperstructureState.SPIN_UP_SHOOT;
         },
@@ -203,6 +207,12 @@ public class Superstructure extends SubsystemBase {
           m_desiredState = SuperstructureState.STOW;
         })
         .withName("Superstructure.manualShoot");
+  }
+
+  public Command manual_shoot_auto() {
+    return manual_shoot(80, Math.toRadians(15))
+        .withTimeout(6.0)
+        .withName("Superstructure.manualShootAuto");
   }
 
   /** @return the state the s
