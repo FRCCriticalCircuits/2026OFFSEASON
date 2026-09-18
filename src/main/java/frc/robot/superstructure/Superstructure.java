@@ -202,7 +202,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   public Command manual_shoot() {
-    return manual_shoot(60, Math.toRadians(80));
+    return manual_shoot(60, Math.toRadians(100));
   }
 
   public Command manual_shoot(double flywheelVelocityRps, double hoodAngleRad) {
@@ -214,7 +214,7 @@ public class Superstructure extends SubsystemBase {
         },
         this)
         .finallyDo(interrupted -> {
-          m_shooter.stop();
+          m_shooter.prepareShot(0, 0);
           m_sequencer.stop();
           m_desiredState = SuperstructureState.STOW;
         })
