@@ -94,7 +94,7 @@ public class Superstructure extends SubsystemBase {
     return Commands.run(
       () -> {
         m_arm.setGoal(Math.toRadians(15));
-        m_roller.setVoltage(2);
+        m_roller.setVoltage(-8);
       }, this)
       .finallyDo(
         () -> {

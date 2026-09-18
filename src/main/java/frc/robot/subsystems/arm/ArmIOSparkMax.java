@@ -32,7 +32,7 @@ public class ArmIOSparkMax implements ArmIO {
 
     SparkMaxConfig configuration = new SparkMaxConfig();
     configuration.idleMode(IdleMode.kBrake);
-    configuration.inverted(true);
+    configuration.inverted(false);
     configuration.smartCurrentLimit(ArmConstants.kSmartCurrentLimitAmps);
     configuration.voltageCompensation(ArmConstants.kVoltageCompensationVolts);
 

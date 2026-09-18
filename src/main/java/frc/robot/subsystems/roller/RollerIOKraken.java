@@ -55,7 +55,7 @@ public class RollerIOKraken implements RollerIO {
     followerConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
 
     m_followerMotor.getConfigurator().apply(followerConfig);
-    m_followerMotor.setControl(new Follower(leaderCanId, MotorAlignmentValue.Aligned));
+    m_followerMotor.setControl(new Follower(leaderCanId, MotorAlignmentValue.Opposed));
   }
 
   /**
