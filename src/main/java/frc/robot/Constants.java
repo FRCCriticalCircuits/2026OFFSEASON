@@ -59,8 +59,8 @@ public final class Constants {
     public static final double kToleranceRadians = Math.toRadians(2.0);
 
     // Manual Intake Setpoints (Alliance-specific)
-    public static final double kBlueManualIntakeArmAngleRadians = -Math.toRadians(700.0);
-    public static final double kRedManualIntakeArmAngleRadians = Math.toRadians(650.0);
+    public static final double kBlueManualIntakeArmAngleRadians = -Math.toRadians(715.0);
+    public static final double kRedManualIntakeArmAngleRadians = -Math.toRadians(700.0);
     public static final double kManualIntakeStowArmAngleRadians = Math.toRadians(15.0);
   }
 
