@@ -4,12 +4,16 @@
 
 package frc.robot.superstructure;
 
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
+import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.AutoAimConstants;
+import frc.robot.Constants.RollerConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.subsystems.arm.Arm;
 import frc.robot.subsystems.roller.Roller;
@@ -89,19 +93,27 @@ public class Superstructure extends SubsystemBase {
    * 4. Automatically returns arm to STOW and stops the roller on release.
    */
 
-  public Command manual_intake()
-  {
+  public Command manual_intake() {
     return Commands.run(
-      () -> {
-        m_arm.setGoal(-Math.toRadians(700));
-        m_roller.setVoltage(-8);
-      }, this)
-      .finallyDo(
         () -> {
-        m_arm.setGoal(Math.toRadians(15));
-        m_roller.stop(); 
-        }
-      ).withName("Manual Intake");
+          boolean isRed =
+              DriverStation.getAlliance().isPresent()
+                  && DriverStation.getAlliance().get() == Alliance.Red;
+          if (isRed) {
+            m_arm.setGoal(ArmConstants.kRedManualIntakeArmAngleRadians);
+            m_roller.setVoltage(RollerConstants.kRedManualIntakeAppliedVolts);
+          } else {
+            m_arm.setGoal(ArmConstants.kBlueManualIntakeArmAngleRadians);
+            m_roller.setVoltage(RollerConstants.kBlueManualIntakeAppliedVolts);
+          }
+        },
+        this)
+        .finallyDo(
+            () -> {
+              m_arm.setGoal(ArmConstants.kManualIntakeStowArmAngleRadians);
+              m_roller.stop();
+            })
+        .withName("Manual Intake");
   }
   public Command intakeSequenceCommand() {
     return Commands.sequence(

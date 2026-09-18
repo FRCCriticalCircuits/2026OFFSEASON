@@ -11,6 +11,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.Constants.ArmConstants;
+import frc.robot.Constants.RollerConstants;
 import frc.robot.subsystems.arm.Arm;
 import frc.robot.subsystems.arm.ArmIOSim;
 import frc.robot.subsystems.roller.Roller;
@@ -313,7 +315,7 @@ public class SubsystemsTest {
     manualShootCmd.execute();
     assertEquals(SuperstructureState.SPIN_UP_SHOOT, superstructure.getDesiredState());
     assertEquals(60.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
-    assertEquals(Math.toRadians(10), shooter.getTargetHoodAngleRadians(), 1e-4);
+    assertEquals(Math.toRadians(30), shooter.getTargetHoodAngleRadians(), 1e-4);
     manualShootCmd.end(false);
     assertEquals(SuperstructureState.STOW, superstructure.getDesiredState());
     assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
@@ -332,6 +334,42 @@ public class SubsystemsTest {
     assertEquals(SuperstructureState.STOW, superstructure.getDesiredState());
     assertEquals(0.0, shooter.getTargetFlywheelVelocityRotationsPerSecond(), 1e-4);
     assertEquals(0.0, sequencer.getTargetVelocityRotationsPerSecond(), 1e-4);
+  }
+
+  @Test
+  public void testManualIntakeAllianceSwitching() {
+    Arm arm = new Arm(new ArmIOSim());
+    Sequencer sequencer = new Sequencer(new SequencerIOSim());
+    Roller roller = new Roller(new RollerIOSim());
+    Shooter shooter = new Shooter(new ShooterIOSim());
+    Superstructure superstructure = new Superstructure(sequencer, arm, roller, shooter);
+
+    Command manualIntakeCmd = superstructure.manual_intake();
+    assertNotNull(manualIntakeCmd);
+    assertTrue(manualIntakeCmd.getRequirements().contains(superstructure));
+
+    // 1. Blue Alliance
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.setAllianceStationId(edu.wpi.first.hal.AllianceStationID.Blue1);
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.notifyNewData();
+    manualIntakeCmd.initialize();
+    manualIntakeCmd.execute();
+    roller.periodic();
+    assertEquals(ArmConstants.kBlueManualIntakeArmAngleRadians, arm.getGoalAngleRadians(), 1e-4);
+    assertEquals(RollerConstants.kBlueManualIntakeAppliedVolts, roller.getAppliedVolts(), 1e-4);
+
+    // 2. Red Alliance
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.setAllianceStationId(edu.wpi.first.hal.AllianceStationID.Red1);
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.notifyNewData();
+    manualIntakeCmd.execute();
+    roller.periodic();
+    assertEquals(ArmConstants.kRedManualIntakeArmAngleRadians, arm.getGoalAngleRadians(), 1e-4);
+    assertEquals(RollerConstants.kRedManualIntakeAppliedVolts, roller.getAppliedVolts(), 1e-4);
+
+    // 3. Release / Cleanup
+    manualIntakeCmd.end(false);
+    roller.periodic();
+    assertEquals(ArmConstants.kManualIntakeStowArmAngleRadians, arm.getGoalAngleRadians(), 1e-4);
+    assertEquals(0.0, roller.getAppliedVolts(), 1e-4);
   }
 
   @Test

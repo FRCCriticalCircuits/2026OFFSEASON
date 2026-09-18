@@ -57,6 +57,11 @@ public final class Constants {
     public static final double kMaxVelocityRadiansPerSecond = Math.PI * 2.0;
     public static final double kMaxAccelerationRadiansPerSecondSquared = Math.PI * 4.0;
     public static final double kToleranceRadians = Math.toRadians(2.0);
+
+    // Manual Intake Setpoints (Alliance-specific)
+    public static final double kBlueManualIntakeArmAngleRadians = -Math.toRadians(700.0);
+    public static final double kRedManualIntakeArmAngleRadians = Math.toRadians(650.0);
+    public static final double kManualIntakeStowArmAngleRadians = Math.toRadians(15.0);
   }
 
   public static final class RollerConstants {
@@ -76,6 +81,10 @@ public final class Constants {
     public static final double kIntakeAppliedVolts = 10.0;
     public static final double kEjectAppliedVolts = -8.0;
     public static final double kHoldAppliedVolts = 2.0;
+
+    // Manual Intake Voltages (Alliance-specific)
+    public static final double kBlueManualIntakeAppliedVolts = -8.0;
+    public static final double kRedManualIntakeAppliedVolts = -8.0;
   }
 
   public static final class SequencerConstants {
