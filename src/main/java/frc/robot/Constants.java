@@ -223,8 +223,8 @@ public final class Constants {
     public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI * 2.0;
 
     // ─── Drive Motor Current Limits ──────────────────────────────────────────
-    public static final double kDriveStatorCurrentLimitAmps = 120.0;
-    public static final double kDriveSupplyCurrentLimitAmps = 60.0;
+    public static final double kDriveStatorCurrentLimitAmps = 80.0;
+    public static final double kDriveSupplyCurrentLimitAmps = 50.0;
 
     // ─── Steer Motor Current Limits (Kraken X44) ────────────────────────────
     public static final double kSteerStatorCurrentLimitAmps = 40.0;

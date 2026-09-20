@@ -39,6 +39,7 @@ import frc.robot.subsystems.swerve.SwerveModuleIOKraken;
 import frc.robot.subsystems.swerve.SwerveModuleIOSim;
 import frc.robot.superstructure.Superstructure;
 import frc.robot.superstructure.SuperstructureState;
+import frc.robot.LimelightHelpers;
 
 public class RobotContainer {
 
@@ -232,10 +233,147 @@ public class RobotContainer {
 
   // ─── Autonomous ────────────────────────────────────────────────────────────
 
+//   private static final String LIMELIGHT_NAME = "limelight";
+
+//   private static final double CENTER_LINE_X = /* TODO */;
+
+//   private static final double LEFT_LIMIT_Y = /* TODO */;
+
+//   private static final double RIGHT_LIMIT_Y = /* TODO */;
+
+//   private static final double CENTER_LINE_TOLERANCE = 0.1;
+
+//   private static final double INITIAL_SPEED = /* TODO */;
+
+//   private static final double SIDE_SPEED = /* TODO */;
+
+//   private static final double INITIAL_DIRECTION = /* TODO */;
+
+//   private boolean hasValidVision(
+//     LimelightHelpers.PoseEstimate pose) {
+
+//     return pose != null && pose.tagCount > 0;
+// }
+
+//    private LimelightHelpers.PoseEstimate getLimelightPose() {
+
+//     return LimelightHelpers.getBotPoseEstimate_wpiBlue(
+//         LIMELIGHT_NAME
+//     );
+// }
+
+
+// private Command limelightCenterLineAuto() {
+
+//     Command moveToCenterLine =
+//     Commands.either(
+//         m_swerveDrive
+//             .driveCommand(
+//                 () -> INITIAL_SPEED,
+//                 () -> 0.0,
+//                 () -> 0.0,
+//                 true)
+//             .until(() -> {
+
+//                 LimelightHelpers.PoseEstimate pose =
+//                     getLimelightPose();
+
+//                 if (!hasValidVision(pose)) {
+//                     return true;
+//                 }
+
+//                 double x = pose.pose.getX();
+
+//                 return Math.abs(CENTER_LINE_X - x)
+//                     <= CENTER_LINE_TOLERANCE;
+//             }),
+
+//         Commands.none(),
+
+//         () -> hasValidVision(getLimelightPose())
+//     );
+
+//     Command moveAlongCenterLine =
+//     Commands.either(
+//         Commands.repeatingSequence(
+
+//             m_swerveDrive
+//                 .driveCommand(
+//                     () -> 0.0,
+//                     () -> SIDE_SPEED,
+//                     () -> 0.0,
+//                     true)
+//                 .until(() -> {
+
+//                     LimelightHelpers.PoseEstimate pose =
+//                         getLimelightPose();
+
+//                     if (!hasValidVision(pose)) {
+//                         return true;
+//                     }
+
+//                     double y = pose.pose.getY();
+
+//                     return y >= RIGHT_LIMIT_Y;
+//                 }),
+
+//             m_swerveDrive
+//                 .driveCommand(
+//                     () -> 0.0,
+//                     () -> -SIDE_SPEED,
+//                     () -> 0.0,
+//                     true)
+//                 .until(() -> {
+
+//                     LimelightHelpers.PoseEstimate pose =
+//                         getLimelightPose();
+
+//                     if (!hasValidVision(pose)) {
+//                         return true;
+//                     }
+
+//                     double y = pose.pose.getY();
+
+//                     return y <= LEFT_LIMIT_Y;
+//                 })
+//         ),
+
+//         Commands.none(),
+
+//         () -> hasValidVision(getLimelightPose())
+//     );
+
+//     return Commands.sequence(
+//         Commands.runOnce(() -> {
+
+//             LimelightHelpers.PoseEstimate pose =
+//                 LimelightHelpers.getBotPoseEstimate_wpiBlue(
+//                     LIMELIGHT_NAME);
+
+//             if (!hasValidVision(pose)) {
+//                 SmartDashboard.putString(
+//                     "Auto Status",
+//                     "NO APRILTAG - AUTO STOP");
+//             } else {
+//                 SmartDashboard.putString(
+//                     "Auto Status",
+//                     "VISION VALID - START AUTO");
+//             }
+//         }),
+
+//         Commands.either(
+//     moveToCenterLine.andThen(moveAlongCenterLine),
+//     Commands.none(),
+//     () -> hasValidVision(getLimelightPose())
+// )
+//     );
+// }
+
+
   public Command getAutonomousCommand() {
     if (m_autoChooser != null && m_autoChooser.getSelected() != null) {
-      return m_autoChooser.getSelected();
+        return m_autoChooser.getSelected();
     }
     return m_superstructure.manual_shoot_auto();
-  }
+    }
 }
