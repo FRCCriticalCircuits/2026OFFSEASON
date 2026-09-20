@@ -3,12 +3,18 @@
 package frc.robot;
 
 import com.ctre.phoenix6.SignalLogger;
+
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.util.LimelightHelpers;
+
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
+
+import frc.robot.subsystems.swerve.SwerveDrive;
 
 public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
@@ -57,6 +63,14 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+
+    SwerveDrive drive = m_robotContainer.getSwerveDrive();
+    double omegaRps = Units.degreesToRotations(drive.getTurnRateDegreesPerSecond());
+    var llmeasurement = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
+
+    if (llmeasurement != null && llmeasurement.tagCount > 0 && Math.abs(omegaRps) < 2.0) {
+      m_robotContainer.getSwerveDrive().resetOdometry(llmeasurement.pose);
+    }
   }
 
   @Override
@@ -78,7 +92,9 @@ public class Robot extends LoggedRobot {
   }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+
+  }
 
   @Override
   public void autonomousExit() {}

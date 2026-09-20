@@ -230,6 +230,11 @@ public class SwerveDrive extends SubsystemBase {
     return m_gyroInputs.yawAngle;
   }
 
+  /** @return Current turn rate in degrees per second. */
+  public double getTurnRateDegreesPerSecond() {
+    return m_gyroInputs.yawRateDegreesPerSecond;
+  }
+
   /**
    * Resets the odometry to a specific pose.
    *

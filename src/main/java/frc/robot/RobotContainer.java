@@ -59,6 +59,10 @@ public class RobotContainer {
   private final Shooter m_shooter;
   private final SwerveDrive m_swerveDrive;
 
+  public SwerveDrive getSwerveDrive() {
+    return m_swerveDrive;
+  }
+
   // ─── Superstructure ────────────────────────────────────────────────────────
 
   private final Superstructure m_superstructure;
